@@ -3,3 +3,4 @@ logs/
 target
 *.iml
 *.tmp
+src/test/
