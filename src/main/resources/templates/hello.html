@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>huobi-quant</title>
+</head>
+
+<body>
+quant<br>
+huobi accessKey: <p th:text="${accessKey}"></p><br>
+huobi secretKey: <p th:text="${secretKey}"></p><br>
+更新交易对信息:
+<a href="/account/symbols">
+<button value="getSymbols" name="getSymbols">Update All Symbols</button>
+</a>
+<form action="/startup" method="post" onsubmit="return checkForm();">
+    币种(BTC/USDT): <input type="text" name="spot"><br>
+    仓位(不能大于真实仓位): <input type="text" name="usdt"><br>
+    微信推送: <input type="radio" name="pusher" value="1">YES
+    <input type="radio" name="pusher" value="0">NO<br>
+    平台: <input type="radio" name="plat" value="huobi">huobi
+    <input type="radio" name="plat" value="binance">binance<br>
+    <input type="submit" value="submit" style="color: green">
+</form>
+</body>
+<script language="javascript">
+</script>
+</html>

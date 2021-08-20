@@ -96,8 +96,7 @@ public class StrategyCommon {
         CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(accountId, clientOrderId, symbol, buyPrice, coinAmount);
         CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
         buyOrderMap.putIfAbsent(clientOrderId, coinAmount);
-        logger.error("====== create buy-limit order at:" + buyPrice.toString() + " ======");
-        logger.error("====== 下 BUY 单, clientOrderId: " + clientOrderId + " ======");
+        logger.error("====== 下 BUY 单 at:" + buyPrice.toString() + ", clientOrderId : " + clientOrderId + "  ======");
 
 
     }
@@ -120,8 +119,8 @@ public class StrategyCommon {
         CreateOrderRequest sellLimitRequest = CreateOrderRequest.spotSellLimit(accountId, symbol, sellPrice, coinAmount);
         Long orderId = CurrentAPI.getApiInstance().getTradeClient().createOrder(sellLimitRequest);
         sellOrderMap.putIfAbsent(orderId, coinAmount);
-        logger.error("====== create sell-limit order at:" + sellPrice.toString() + " ======");
-        logger.error("====== 下 SELL 单, orderId: " + orderId + " ======");
+        logger.error("====== 下 SELL 单 at:" + buyPrice.toString() + ", orderId : " + orderId + "  ======");
+
 
     }
 

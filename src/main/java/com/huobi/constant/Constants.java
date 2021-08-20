@@ -9,7 +9,7 @@ public class Constants {
 
     // wechat pusher
 
-    public static final String WX_PUSHER_TOKEN = "AT_RQ1xF00Lq69TkYNn0dC8DC8U6wM0vvaP";
+    public static final String WX_PUSHER_TOKEN = "";
     public static final String WX_PUSHER_URL = "http://wxpusher.zjiecode.com/api/send/message";
 
     public static final Double HIGH_RATIO = 0.8;

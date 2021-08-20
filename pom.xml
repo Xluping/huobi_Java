@@ -122,6 +122,23 @@
         </executions>
       </plugin>
 
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>2.5.3</version>
+          <configuration>
+            <!-- 指定启动类 -->
+            <mainClass>com.huobi.SpotBuyer</mainClass>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>repackage</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
     </plugins>
   </build>
 
