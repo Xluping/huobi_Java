@@ -189,12 +189,15 @@ public class HuobiUtil {
         return order;
     }
 
-    public static void setPrecision(Spot spot) {
+    public static void setBaseInfo(Spot spot) {
         List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
             if (symbol.getBaseCurrency().equalsIgnoreCase(spot.getBaseCurrency()) && symbol.getQuoteCurrency().equalsIgnoreCase(spot.getQuoteCurrency())) {
                 spot.setPricePrecision(symbol.getPricePrecision());
                 spot.setAmountPrecision(symbol.getAmountPrecision());
+                spot.setMinOrderValue(symbol.getMinOrderValue());
+                spot.setLimitOrderMinOrderAmt(symbol.getLimitOrderMinOrderAmt());
+                spot.setSellMarketMinOrderAmt(symbol.getSellMarketMinOrderAmt());
             }
         });
     }

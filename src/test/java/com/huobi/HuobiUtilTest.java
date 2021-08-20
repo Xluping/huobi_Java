@@ -70,8 +70,9 @@ public class HuobiUtilTest {
 
     @Test
     public void precision() {
-        BigDecimal buyPrice = new BigDecimal("12.34567856534");
-        buyPrice = buyPrice.setScale(4, RoundingMode.HALF_UP);
-        System.out.println(buyPrice);
+        List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
+        symbolList.forEach(symbol -> {
+            System.out.println(symbol.toString());
+        });
     }
 }

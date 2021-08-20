@@ -20,7 +20,6 @@ public class StrategyTogether extends BaseStrategy {
     private double portionHigh;
     private double portionMedium;
     private double portionLow;
-    private String symbol;
 
     public StrategyTogether() {
     }
@@ -28,26 +27,25 @@ public class StrategyTogether extends BaseStrategy {
 
     public void setSpot(Spot spot) {
         this.spot = spot;
-        this.symbol = spot.getBaseCurrency() + spot.getQuoteCurrency();
         this.portionHigh = spot.getHighStrategyBalance() / Constants.HIGH_COUNT;
         this.portionMedium = spot.getMediumStrategyBalance() / Constants.MEDIUM_COUNT;
         this.portionLow = spot.getLowStrategyBalance() / Constants.LOW_COUNT;
     }
 
-    public void launch() {
+    public synchronized void launch() {
         HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error(spot.toString());
         logger.error("====== 策略启动 ======");
         logger.error("====== 高频策略每次补仓份额: " + portionHigh + " USDT ======");
         logger.error("====== 稳健策略每次补仓份额: " + portionMedium + " USDT ======");
         logger.error("====== 保守策略每次补仓份额: " + portionLow + " USDT ======");
-        BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(symbol);
+        BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
         logger.error("====== launch: " + currentTradPrice + "======");
         StrategyCommon.calculateBuyPriceList(currentTradPrice, spot.getPricePrecision());
 
         // 启动后,根据当前价格下单 buy .
-        BigDecimal usdtAmount = new BigDecimal(portionHigh);
-        StrategyCommon.placeBuyOrder(spot.getAccountId(), symbol, currentTradPrice, usdtAmount, spot.getPricePrecision(), spot.getAmountPrecision());
+        BigDecimal usdt = new BigDecimal(portionHigh);
+        StrategyCommon.placeBuyOrder(spot, currentTradPrice, usdt);
 
     }
 

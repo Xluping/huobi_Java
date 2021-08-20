@@ -32,7 +32,7 @@ public class StrategyCommon {
 
     static Logger logger = LoggerFactory.getLogger(StrategyCommon.class);
 
-    public static ArrayList<BigDecimal> calculateBuyPriceList(BigDecimal latestPrice, int scale) {
+    public static synchronized ArrayList<BigDecimal> calculateBuyPriceList(BigDecimal latestPrice, int scale) {
         priceList.clear();
         // 高频
         calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE, Constants.HIGH_COUNT, new BigDecimal("0"));
@@ -64,7 +64,7 @@ public class StrategyCommon {
      * @param range
      * @param count
      */
-    public static void calculateBuyPrice(BigDecimal latestPrice, int scale, double range, double count, BigDecimal previousPercent) {
+    public static synchronized void calculateBuyPrice(BigDecimal latestPrice, int scale, double range, double count, BigDecimal previousPercent) {
         BigDecimal pre = previousPercent.multiply(new BigDecimal("0.01"));
         BigDecimal base = new BigDecimal("1");
         double gridPercentDoubleMedium = range / count;
@@ -85,18 +85,42 @@ public class StrategyCommon {
     /**
      * 下单 buy-market
      * 保存 clientOrderId, amount 以便轮巡时 查看下单状态
+     * <p>
+     * 根据 usdt 计算买入的币的数量
      *
-     * @param usdt quota-currency
+     * @param spot
+     * @param buyPrice
+     * @param usdt     计价币种数量
      */
-    public static void placeBuyOrder(Long accountId, String symbol, BigDecimal buyPrice, BigDecimal usdt, int pricePrecision, int amountPrecision) {
-        BigDecimal coinAmount = usdt.divide(buyPrice, RoundingMode.HALF_UP);
-        String clientOrderId = Constants.CLIENT_ID_PREFIX + System.nanoTime();
-        buyPrice = buyPrice.setScale(pricePrecision, RoundingMode.HALF_UP);
-        coinAmount = coinAmount.setScale(amountPrecision, RoundingMode.HALF_DOWN);
-        CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(accountId, clientOrderId, symbol, buyPrice, coinAmount);
+    public static synchronized void placeBuyOrder(Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
+
+        BigDecimal orderValue = new BigDecimal("0");
+        //最小下单金额
+        if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
+            orderValue = orderValue.add(spot.getMinOrderValue());
+        } else {
+            orderValue = orderValue.add(usdt);
+        }
+
+        BigDecimal coinAmount = orderValue.divide(buyPrice, RoundingMode.HALF_UP);
+        //自定义订单号
+        String clientOrderId = spot.getSymbol() + System.nanoTime();
+        // 价格,币数 有严格的小数位限制
+        buyPrice = buyPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+        coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_DOWN);
+
+        BigDecimal orderAmount = new BigDecimal("0");
+        //最小下单量限制
+        if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
+            orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
+        } else {
+            orderAmount = orderAmount.add(coinAmount);
+        }
+
+        CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), buyPrice, orderAmount);
         CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
-        buyOrderMap.putIfAbsent(clientOrderId, coinAmount);
-        logger.error("====== 下 BUY 单 at:" + buyPrice.toString() + ", clientOrderId : " + clientOrderId + "  ======");
+        buyOrderMap.putIfAbsent(clientOrderId, orderAmount);
+        logger.error("====== BUY at:" + buyPrice.toString() + ", clientOrderId : " + clientOrderId + "  ======");
 
 
     }
@@ -105,21 +129,29 @@ public class StrategyCommon {
      * 计算卖单价格, 并挂单.
      * sell-limit
      *
+     * @param spot
      * @param buyPrice
-     * @param symbol
-     * @param accountId
      * @param coinAmount
      */
-    public static void placeSellOrder(Long accountId, String symbol, BigDecimal buyPrice, BigDecimal coinAmount, int pricePrecision, int amountPrecision) {
-        // buyPrice * (1+offset);
+    public static synchronized void placeSellOrder(Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
+        // 计算卖出价格 buyPrice * (1+offset);
         BigDecimal sellPrice = buyPrice.multiply(Constants.SELL_OFFSET);
-        sellPrice = sellPrice.setScale(pricePrecision, RoundingMode.HALF_UP);
-        logger.error("====== placeSellOrder: " + sellPrice.toString() + "======");
-        coinAmount = coinAmount.setScale(amountPrecision, RoundingMode.HALF_DOWN);
-        CreateOrderRequest sellLimitRequest = CreateOrderRequest.spotSellLimit(accountId, symbol, sellPrice, coinAmount);
+        // 价格,币数 有严格的小数位限制
+        sellPrice = sellPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+        coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_DOWN);
+        //最小下单量限制
+        BigDecimal orderAmount = new BigDecimal("0");
+        //最小下单量限制
+        if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
+            orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
+        } else {
+            orderAmount = orderAmount.add(coinAmount);
+        }
+
+        CreateOrderRequest sellLimitRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), spot.getSymbol(), sellPrice, orderAmount);
         Long orderId = CurrentAPI.getApiInstance().getTradeClient().createOrder(sellLimitRequest);
-        sellOrderMap.putIfAbsent(orderId, coinAmount);
-        logger.error("====== 下 SELL 单 at:" + buyPrice.toString() + ", orderId : " + orderId + "  ======");
+        sellOrderMap.putIfAbsent(orderId, orderAmount);
+        logger.error("====== SELL at:" + sellPrice.toString() + ", orderId : " + orderId + "  ======");
 
 
     }
@@ -154,7 +186,7 @@ public class StrategyCommon {
     /**
      * 定时任务
      */
-    public static void timer(String time, Class<? extends Job> jobClass) {
+    public static void timer(String time, Class<? extends Job> jobClass, String jobDetailsKey) {
         try {
             // 获取到一个StdScheduler, StdScheduler其实是QuartzScheduler的一个代理
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
@@ -163,12 +195,12 @@ public class StrategyCommon {
             scheduler.start();
             // 新建一个Job, 指定执行类是QuartzTest(需实现Job), 指定一个K/V类型的数据, 指定job的name和group
             JobDetail job = newJob(jobClass)
-                    .usingJobData("swap_data", "test")
-                    .withIdentity("swap_group", "huobi_timer")
+                    .usingJobData(jobDetailsKey, jobDetailsKey + "_quant")
+                    .withIdentity(jobDetailsKey + "_group", jobDetailsKey + "_timer")
                     .build();
             // 新建一个Trigger, 表示JobDetail的调度计划, 这里的cron表达式是 每10秒执行一次
             CronTrigger trigger = newTrigger()
-                    .withIdentity("myTrigger", "huobi_timer")
+                    .withIdentity(jobDetailsKey + "_trigger", jobDetailsKey + "_timer")
                     .startNow()
                     .withSchedule(cronSchedule(time))
                     .build();

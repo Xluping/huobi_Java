@@ -1,5 +1,7 @@
 package com.huobi;
 
+import java.math.BigDecimal;
+
 /**
  * @program: huobi-client
  * @package: com.huobi
@@ -9,6 +11,7 @@ package com.huobi;
 public class Spot {
     // BTC/USDT
     private Long accountId;
+    private String symbol;
     private String baseCurrency; // BTC
     private String quoteCurrency;// USDT
     private int pricePrecision;
@@ -19,9 +22,21 @@ public class Spot {
     private double lowStrategyBalance;// 保守仓位
     private int strategyOffset; // 策略分配: 高频 0-20%  稳健 20-50% 保守 50%+
     private int orderOffset; //下单间隔
+    private BigDecimal limitOrderMinOrderAmt; //限价单最小下单量 ，以基础币种为单位
+    private BigDecimal sellMarketMinOrderAmt; // 市价卖单 最小下单量，以基础币种为单位
+    private BigDecimal minOrderValue; //交易对限价单和市价买单最小下单金额 ，以计价币种为单位
+
 
     public Spot() {
 
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
     }
 
     public Long getAccountId() {
@@ -113,10 +128,35 @@ public class Spot {
         this.orderOffset = orderOffset;
     }
 
+    public BigDecimal getMinOrderValue() {
+        return minOrderValue;
+    }
+
+    public void setMinOrderValue(BigDecimal minOrderValue) {
+        this.minOrderValue = minOrderValue;
+    }
+
+    public BigDecimal getLimitOrderMinOrderAmt() {
+        return limitOrderMinOrderAmt;
+    }
+
+    public void setLimitOrderMinOrderAmt(BigDecimal limitOrderMinOrderAmt) {
+        this.limitOrderMinOrderAmt = limitOrderMinOrderAmt;
+    }
+
+    public BigDecimal getSellMarketMinOrderAmt() {
+        return sellMarketMinOrderAmt;
+    }
+
+    public void setSellMarketMinOrderAmt(BigDecimal sellMarketMinOrderAmt) {
+        this.sellMarketMinOrderAmt = sellMarketMinOrderAmt;
+    }
+
     @Override
     public String toString() {
         return "Spot{" +
                 "accountId=" + accountId +
+                ", symbol='" + symbol + '\'' +
                 ", baseCurrency='" + baseCurrency + '\'' +
                 ", quoteCurrency='" + quoteCurrency + '\'' +
                 ", pricePrecision=" + pricePrecision +
@@ -127,6 +167,9 @@ public class Spot {
                 ", lowStrategyBalance=" + lowStrategyBalance +
                 ", strategyOffset=" + strategyOffset +
                 ", orderOffset=" + orderOffset +
+                ", limitOrderMinOrderAmt=" + limitOrderMinOrderAmt +
+                ", sellMarketMinOrderAmt=" + sellMarketMinOrderAmt +
+                ", minOrderValue=" + minOrderValue +
                 '}';
     }
 }
