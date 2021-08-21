@@ -42,34 +42,35 @@ public class HuobiUtil {
                 accountId = account.getId();
             }
         });
-        logger.info("===getAccountIdByType()  accountId : " + accountId + " ======");
+        logger.info("====== HuobiUtil-getAccountIdByType: accountId= " + accountId + "======");
         return accountId > 0 ? accountId : -1;
     }
 
     /**
-     * 根据账户 ID 查询USDT账户余额
+     * 根据账户 ID 查询账户余额
      *
      * @param accountId
      * @param baseCurrency
      * @param quotaCurrency 交易对
+     * @return 返回账户余额
      */
     public static BigDecimal getBalanceByAccountId(Long accountId, String baseCurrency, String quotaCurrency) {
+        StringBuilder sb = new StringBuilder();
         AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
         AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
                 if (balance.getType().equalsIgnoreCase("trade")) {
-                    logger.info("===getBalanceByAccountId() 现有仓位: " + balance.toString() + " ======");
+                    sb.append(baseCurrency).append(": ").append(balance.getBalance()).append(" -- ");
                 }
             }
             if (balance.getCurrency().equalsIgnoreCase(quotaCurrency) && balance.getType().equalsIgnoreCase("trade")) {
                 bal.set(balance.getBalance());
-                logger.info("===getBalanceByAccountId() 现有仓位: " + balance.toString() + " ======");
-
+                sb.append(quotaCurrency).append(": ").append(balance.getBalance());
             }
         });
-
+        logger.info("====== HuobiUtil-getBalanceByAccountId: " + sb.toString() + "======");
         return bal.get();
 
     }
@@ -86,8 +87,8 @@ public class HuobiUtil {
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getType().equalsIgnoreCase("trade")) {
+                logger.info("====== HuobiUtil-getBalanceByAccountId: point balance: " + balance.toString() + "======");
 
-//                logger.info("===getBalanceByAccountId() 账户余额: " + balance.toString() + " ======");
                 bal.set(balance.getBalance());
 
             }
@@ -116,9 +117,9 @@ public class HuobiUtil {
             params.put("topicIds", topics);
 
             String body = HbdmHttpClient.getInstance().doPost2WX(Constants.WX_PUSHER_URL, params);
-            if (body.contains("处理成功")) logger.error("===weChatPusher(): 推送成功 " + msg + " ======");
+            if (body.contains("处理成功")) logger.error("=== HuobiUtil-weChatPusher: 推送成功 " + msg + " ======");
         } catch (Exception e) {
-            logger.error("===weChatPusher(): 无法推送消息 ======");
+            logger.error("=== HuobiUtil-weChatPusher: 无法推送消息 ======");
             e.printStackTrace();
         }
     }
@@ -148,7 +149,7 @@ public class HuobiUtil {
                 .side(orderSide)
                 .build());
         orderList.forEach(order -> {
-            logger.info("===openOrders(): " + order.toString() + " ======");
+            logger.info("=== HuobiUtil-openOrders: " + order.toString() + " ======");
         });
         return orderList;
     }
@@ -163,8 +164,8 @@ public class HuobiUtil {
     public static int cancelOrder(String clientOrderId) {
         int code = CurrentAPI.getApiInstance().getTradeClient().cancelOrder(clientOrderId);
         if (code == 7) {
-            logger.info("=== cancelOrder(): " + clientOrderId + " ======");
-            logger.info("=== cancelOrder(): canceled ======");
+            logger.info("=== HuobiUtil-cancelOrder: " + clientOrderId + " ======");
+            logger.info("=== HuobiUtil-cancelOrder: canceled ======");
         }
         return code;
     }
@@ -177,7 +178,7 @@ public class HuobiUtil {
      */
     public static Order getOrderByOrderId(Long orderId) {
         Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(orderId);
-//        logger.info("===卖单: " + order);
+//        logger.info("=== HuobiUtil-卖单: " + order);
         return order;
     }
 
@@ -189,7 +190,7 @@ public class HuobiUtil {
      */
     public static Order getOrderByClientId(String clientOrderId) {
         Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
-//        logger.info("===买单: " + order);
+//        logger.info("=== HuobiUtil-买单: " + order);
         return order;
     }
 

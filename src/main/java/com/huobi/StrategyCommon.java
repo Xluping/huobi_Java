@@ -74,9 +74,9 @@ public class StrategyCommon {
             BigDecimal downTo = goDown.add(pre);
             System.out.println(downTo);
             BigDecimal buyPosition = base.subtract(downTo);
-            logger.info("====== buyPosition(下跌到)= " + buyPosition.toString() + " * 100% ======");
+            logger.info("====== StrategyCommon-buyPosition(下跌到)= " + buyPosition.toString() + " * 100% ======");
             BigDecimal buyPrice = latestPrice.multiply(buyPosition).setScale(scale, RoundingMode.DOWN);
-            logger.info("====== buyPrice= " + buyPrice.toString() + " ======");
+            logger.info("====== StrategyCommon-buyPrice= " + buyPrice.toString() + " ======");
             priceList.add(buyPrice);
         }
         logger.info("==============================================================");
@@ -120,7 +120,7 @@ public class StrategyCommon {
         CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), buyPrice, orderAmount);
         CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
         buyOrderMap.putIfAbsent(clientOrderId, orderAmount);
-        logger.error("====== BUY at:" + buyPrice.toString() + ", clientOrderId : " + clientOrderId + "  ======");
+        logger.error("====== StrategyCommon-BUY at:" + buyPrice.toString() + ", clientOrderId : " + clientOrderId + "  ======");
 
 
     }
@@ -151,7 +151,7 @@ public class StrategyCommon {
         CreateOrderRequest sellLimitRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), spot.getSymbol(), sellPrice, orderAmount);
         Long orderId = CurrentAPI.getApiInstance().getTradeClient().createOrder(sellLimitRequest);
         sellOrderMap.putIfAbsent(orderId, orderAmount);
-        logger.error("====== SELL at:" + sellPrice.toString() + ", orderId : " + orderId + "  ======");
+        logger.error("====== StrategyCommon-SELL at:" + sellPrice.toString() + ", orderId : " + orderId + "  ======");
 
 
     }

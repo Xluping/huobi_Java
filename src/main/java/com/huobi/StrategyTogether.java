@@ -35,12 +35,12 @@ public class StrategyTogether extends BaseStrategy {
     public synchronized void launch(BigDecimal usdtBalance) {
         HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error(spot.toString());
-        logger.error("====== 策略启动 ======");
-        logger.error("====== 高频策略每次补仓份额: " + portionHigh + " USDT ======");
-        logger.error("====== 稳健策略每次补仓份额: " + portionMedium + " USDT ======");
-        logger.error("====== 保守策略每次补仓份额: " + portionLow + " USDT ======");
+        logger.error("====== StrategyTogether-策略启动 ======");
+        logger.error("====== StrategyTogether-高频策略每次补仓份额: " + portionHigh + " USDT ======");
+        logger.error("====== StrategyTogether-稳健策略每次补仓份额: " + portionMedium + " USDT ======");
+        logger.error("====== StrategyTogether-保守策略每次补仓份额: " + portionLow + " USDT ======");
         BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
-        logger.error("====== launch: " + currentTradPrice + "======");
+        logger.error("====== StrategyTogether-launch: " + currentTradPrice + "======");
         StrategyCommon.calculateBuyPriceList(currentTradPrice, spot.getPricePrecision());
 
         // 启动后,根据当前价格下单 buy .
@@ -49,7 +49,7 @@ public class StrategyTogether extends BaseStrategy {
             SpotBuyer.setInsufficientFound(false);
             StrategyCommon.placeBuyOrder(spot, currentTradPrice, usdt);
         } else {
-            logger.error("====== launch: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
+            logger.error("====== StrategyTogether-launch: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
             SpotBuyer.setInsufficientFound(true);
         }
 
