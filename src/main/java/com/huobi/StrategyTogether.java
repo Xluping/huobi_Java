@@ -32,7 +32,7 @@ public class StrategyTogether extends BaseStrategy {
         this.portionLow = spot.getLowStrategyBalance() / Constants.LOW_COUNT;
     }
 
-    public synchronized void launch() {
+    public synchronized void launch(BigDecimal usdtBalance) {
         HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error(spot.toString());
         logger.error("====== 策略启动 ======");
@@ -45,7 +45,13 @@ public class StrategyTogether extends BaseStrategy {
 
         // 启动后,根据当前价格下单 buy .
         BigDecimal usdt = new BigDecimal(portionHigh);
-        StrategyCommon.placeBuyOrder(spot, currentTradPrice, usdt);
+        if (usdtBalance.compareTo(usdt) >= 0) {
+            SpotBuyer.setInsufficientFound(false);
+            StrategyCommon.placeBuyOrder(spot, currentTradPrice, usdt);
+        } else {
+            logger.error("====== launch: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
+            SpotBuyer.setInsufficientFound(true);
+        }
 
     }
 

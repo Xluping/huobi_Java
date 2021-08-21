@@ -29,6 +29,9 @@ public class SpotBuyer implements Job {
     private final static StrategyTogether strategyTogether = new StrategyTogether();
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static String symbol = "htusdt";
+    private static BigDecimal usdtBalance = new BigDecimal("0");
+    private static final boolean insufficientFound = true;
+
 
     Logger logger = LoggerFactory.getLogger(SpotBuyer.class);
     private Long spotAccountId = 14086863L;
@@ -49,43 +52,55 @@ public class SpotBuyer implements Job {
      * 设置基本参数
      */
     public void startUp() {
-        Scanner sc = new Scanner(System.in);
-        System.out.println("现货币种 spot currency: (BTC-USDT)");
-        String spotInputStr = sc.next();
-        String[] currencys = spotInputStr.split("-");
-        if (currencys.length == 2) {
-            spot.setBaseCurrency(currencys[0]);
-            spot.setQuoteCurrency(currencys[1]);
-            symbol = currencys[0] + currencys[1];
-        } else {//默认 USDT 交易对
-            spot.setBaseCurrency(spotInputStr);
-            spot.setQuoteCurrency("usdt");
-            symbol = spotInputStr + "usdt";
+        try {
+            Scanner sc = new Scanner(System.in);
+            System.out.println("现货币种 spot currency: (BTC-USDT)");
+            String spotInputStr = sc.next();
+            String[] currencys = spotInputStr.split("-");
+            if (currencys.length == 2) {
+                spot.setBaseCurrency(currencys[0]);
+                spot.setQuoteCurrency(currencys[1]);
+                symbol = currencys[0] + currencys[1];
+            } else {//默认 USDT 交易对
+                spot.setBaseCurrency(spotInputStr);
+                spot.setQuoteCurrency("usdt");
+                symbol = spotInputStr + "usdt";
+            }
+            // TODO 8:14 PM  :  服务器
+//            spot.setBaseCurrency("ht");
+//            spot.setQuoteCurrency("usdt");
+//            symbol = "htusdt";
+
+            spot.setSymbol(symbol);
+
+
+            spotAccountId = HuobiUtil.getAccountIdByType("spot");
+            pointAccountId = HuobiUtil.getAccountIdByType("point");
+            spot.setAccountId(spotAccountId);
+
+            usdtBalance = usdtBalance.add(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
+            System.out.println("分配到" + symbol + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
+            // TODO 8:14 PM  : 服务器
+//            double totalBalance = 1000.0;
+            double totalBalance = sc.nextDouble();
+
+            spot.setTotalBalance(totalBalance);
+
+            double highBalance = totalBalance * Constants.HIGH_RATIO;
+            spot.setHighStrategyBalance(highBalance);
+            double mediumBalance = totalBalance * Constants.MEDIUM_RATIO;
+            spot.setMediumStrategyBalance(mediumBalance);
+            double lowBalance = totalBalance * Constants.LOW_RATIO;
+            spot.setLowStrategyBalance(lowBalance);
+            logger.error("分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
+            logger.error("分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
+            logger.error("分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
+            HuobiUtil.setBaseInfo(spot);
+            strategyTogether.setSpot(spot);
+            strategyTogether.launch(usdtBalance);
+        } catch (SDKException sdkException) {
+            logger.error("====== startup: " + sdkException.getMessage() + "======");
         }
-        spot.setSymbol(symbol);
-
-
-        spotAccountId = HuobiUtil.getAccountIdByType("spot");
-        pointAccountId = HuobiUtil.getAccountIdByType("point");
-        spot.setAccountId(spotAccountId);
-
-        HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
-        System.out.println("分配到" + spotInputStr + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
-        double totalBalance = sc.nextDouble();
-        spot.setTotalBalance(totalBalance);
-
-        double highBalance = totalBalance * Constants.HIGH_RATIO;
-        spot.setHighStrategyBalance(highBalance);
-        double mediumBalance = totalBalance * Constants.MEDIUM_RATIO;
-        spot.setMediumStrategyBalance(mediumBalance);
-        double lowBalance = totalBalance * Constants.LOW_RATIO;
-        spot.setLowStrategyBalance(lowBalance);
-        logger.error("分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
-        logger.error("分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
-        logger.error("分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
-        HuobiUtil.setBaseInfo(spot);
-        strategyTogether.setSpot(spot);
-        strategyTogether.launch();
 
     }
 
@@ -112,6 +127,7 @@ public class SpotBuyer implements Job {
                 alertSend = false;
                 logger.error("====== 点卡余额: " + pointBalance.toString() + " ======");
             }
+
             // 处理之前的买单,卖单
             ConcurrentHashMap<String, BigDecimal> buyOrderMap = StrategyCommon.getBuyOrderMap();
             ConcurrentHashMap<Long, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
@@ -161,7 +177,7 @@ public class SpotBuyer implements Job {
 
             }
             //本轮买单已全部卖出. 重启应用
-            if (sellOrderMap.size() == 0) {
+            if (sellOrderMap.size() == 0 && !insufficientFound) {
                 logger.error("====== 开始清理残余买单.======");
 
                 while (buyIterator.hasNext()) {
@@ -178,7 +194,7 @@ public class SpotBuyer implements Job {
                 HuobiUtil.weChatPusher("最新收益: " + pureProfit.toString(), 2);
                 orderCount.getAndSet(0);
 
-                strategyTogether.launch();
+                strategyTogether.launch(usdtBalance);
 
             }
 
@@ -200,20 +216,28 @@ public class SpotBuyer implements Job {
 
             if (orderCount.get() == i && buyOrderMap.size() == 0) {
                 if (i < priceList.size()) {
-                    double usdtAmount = 10.0;
+                    double usdtPortion = 10.0;
                     switch (currentStrategy) {
                         case "high":
-                            usdtAmount = spot.getHighStrategyBalance() / Constants.HIGH_COUNT;
+                            usdtPortion = spot.getHighStrategyBalance() / Constants.HIGH_COUNT;
                             break;
                         case "medium":
-                            usdtAmount = spot.getMediumStrategyBalance() / Constants.MEDIUM_COUNT;
+                            usdtPortion = spot.getMediumStrategyBalance() / Constants.MEDIUM_COUNT;
                             break;
                         case "low":
-                            usdtAmount = spot.getLowStrategyBalance() / Constants.LOW_COUNT;
+                            usdtPortion = spot.getLowStrategyBalance() / Constants.LOW_COUNT;
                             break;
 
                     }
-                    StrategyCommon.placeBuyOrder(spot, priceList.get(i), new BigDecimal(usdtAmount));
+                    BigDecimal usdt = new BigDecimal(usdtPortion);
+                    if (usdtBalance.compareTo(usdt) >= 0) {
+                        setInsufficientFound(false);
+                        StrategyCommon.placeBuyOrder(spot, priceList.get(i), usdt);
+                    } else {
+                        setInsufficientFound(true);
+                        logger.error("====== priceListener: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
+
+                    }
                 }
 
             }
@@ -227,5 +251,9 @@ public class SpotBuyer implements Job {
                 }
             }
         }
+    }
+
+    public static void setInsufficientFound(boolean insufficientFound) {
+        insufficientFound = insufficientFound;
     }
 }

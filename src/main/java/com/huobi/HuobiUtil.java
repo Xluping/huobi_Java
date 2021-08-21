@@ -47,7 +47,7 @@ public class HuobiUtil {
     }
 
     /**
-     * 根据账户 ID 查询账户余额
+     * 根据账户 ID 查询USDT账户余额
      *
      * @param accountId
      * @param baseCurrency
@@ -58,11 +58,15 @@ public class HuobiUtil {
         AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
-            if (balance.getCurrency().equalsIgnoreCase(baseCurrency) || balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
+            if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
                 if (balance.getType().equalsIgnoreCase("trade")) {
                     logger.info("===getBalanceByAccountId() 现有仓位: " + balance.toString() + " ======");
-                    bal.set(balance.getBalance());
                 }
+            }
+            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency) && balance.getType().equalsIgnoreCase("trade")) {
+                bal.set(balance.getBalance());
+                logger.info("===getBalanceByAccountId() 现有仓位: " + balance.toString() + " ======");
+
             }
         });
 
