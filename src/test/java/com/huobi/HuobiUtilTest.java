@@ -10,11 +10,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class HuobiUtilTest {
-    private final Long spotAccountId = 14086863L;
+    private final Long accountId = 14086863L;
     private Long pointAccountId = 14424186L;
 
     String symbol = "htusdt";
@@ -36,12 +36,24 @@ public class HuobiUtilTest {
 
     @Test
     public void getBalanceByAccountId() {
-        AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(pointAccountId).build());
+        String baseCurrency = "ht";
+        String quotaCurrency = "usdt";
+        StringBuilder sb = new StringBuilder();
+        AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
+        AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
-            if (balance.getType().equalsIgnoreCase("trade"))
-                logger.error("====== 账户余额: " + balance.toString() + " ======");
+            if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
+                if (balance.getType().equalsIgnoreCase("trade")) {
+                    sb.append(baseCurrency).append(": ").append(balance.getBalance()).append(" -- ");
+                }
+            }
+            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency) && balance.getType().equalsIgnoreCase("trade")) {
+                bal.set(balance.getBalance());
+                sb.append(quotaCurrency).append(": ").append(balance.getBalance());
+            }
         });
+        logger.info("====== HuobiUtil-getBalanceByAccountId: " + sb.toString() + "======");
     }
 
     @Test
