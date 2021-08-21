@@ -136,12 +136,6 @@ public class SpotBuyer implements Job {
                     logger.error("====== 买单已取消 : " + buyOrder.toString() + " ======");
                     orderCount.getAndDecrement();
                     buyIterator.remove();
-                } else if (buyOrder.getState().trim().equalsIgnoreCase("submitted") && StrategyCommon.bigDiff(latestPrice, buyPrice)) {
-                    int code = HuobiUtil.cancelOrder(clientId);
-                    if (code == 7) { //取消成功
-                        orderCount.getAndDecrement();
-                        buyIterator.remove();
-                    }
                 }
             }
 
@@ -168,6 +162,16 @@ public class SpotBuyer implements Job {
             }
             //本轮买单已全部卖出. 重启应用
             if (sellOrderMap.size() == 0) {
+                logger.error("====== 开始清理残余买单.======");
+
+                while (buyIterator.hasNext()) {
+                    Map.Entry<String, BigDecimal> entry = buyIterator.next();
+                    String clientId = entry.getKey();
+                    Order remainOrder = HuobiUtil.getOrderByClientId(clientId);
+                    logger.error("====== 正在取消订单: " + remainOrder.toString() + "======");
+                    HuobiUtil.cancelOrder(clientId);
+                    buyIterator.remove();
+                }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
                 logger.error("====== 最新收益: " + pureProfit.toString() + " ======");
@@ -192,7 +196,6 @@ public class SpotBuyer implements Job {
                 logger.error("====== 当前策略: " + currentStrategy + " ======");
 
             }
-            // TODO 3:46 AM  :  canOpen() && 下单次数, 总仓位
             //之前买单全部成交后, 才考虑下单.
 
             if (orderCount.get() == i && buyOrderMap.size() == 0) {
