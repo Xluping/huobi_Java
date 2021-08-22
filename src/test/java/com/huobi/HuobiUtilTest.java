@@ -1,10 +1,13 @@
 package com.huobi;
 
 import com.huobi.client.req.account.AccountBalanceRequest;
+import com.huobi.client.req.trade.OpenOrdersRequest;
+import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.model.account.Account;
 import com.huobi.model.account.AccountBalance;
 import com.huobi.model.account.Balance;
 import com.huobi.model.generic.Symbol;
+import com.huobi.model.trade.Order;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +69,14 @@ public class HuobiUtilTest {
 
     @Test
     public void openOrders() {
+        List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
+                .accountId(accountId)
+                .symbol("dogeusdt")
+                .side(OrderSideEnum.BUY)
+                .build());
+        orderList.forEach(order -> {
+            logger.info("=== HuobiUtil-openOrders: " + order.toString() + " ======");
+        });
     }
 
     @Test

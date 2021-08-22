@@ -140,18 +140,24 @@ public class HuobiUtil {
 
 
     /**
-     * 获取所有挂单
+     * 重启后,取消当前交易对的所有orderSide方向的订单
+     *
+     * @param accountId
+     * @param symbol
+     * @param orderSide
+     * @return
      */
-    public static List<Order> openOrders(Long accountId, String symbol, OrderSideEnum orderSide) {
+    public static void cancelOpenOrders(Long accountId, String symbol, OrderSideEnum orderSide) {
+        logger.info("=== HuobiUtil-cancelOpenOrders: 取消 " + symbol + " 的所有 " + orderSide.toString() + " 单 ======");
+
         List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
                 .symbol(symbol)
                 .side(orderSide)
                 .build());
         orderList.forEach(order -> {
-            logger.info("=== HuobiUtil-openOrders: " + order.toString() + " ======");
+            CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId());
         });
-        return orderList;
     }
 
     /**
@@ -169,6 +175,7 @@ public class HuobiUtil {
         }
         return code;
     }
+
 
     /**
      * 查询卖单

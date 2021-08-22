@@ -23,17 +23,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Luping
  * @create: 8/19/21 1:28 PM
  */
-public class SpotBuyer implements Job {
+public class ONTSpotBuyer implements Job {
     private final BigDecimal alertPointBalance = new BigDecimal("50");
     private final static Spot spot = new Spot();
     private final static StrategyTogether strategyTogether = new StrategyTogether();
     private final AtomicInteger orderCount = new AtomicInteger(0);
-    private static String symbol = "htusdt";
+    private static final String symbol = "ontusdt";
     private static BigDecimal usdtBalance = new BigDecimal("0");
     private static boolean insufficientFound = true;
 
 
-    Logger logger = LoggerFactory.getLogger(SpotBuyer.class);
+    Logger logger = LoggerFactory.getLogger(ONTSpotBuyer.class);
     private Long spotAccountId = 14086863L;
     private Long pointAccountId = 14424186L;
     private boolean alertSend = false;
@@ -41,10 +41,10 @@ public class SpotBuyer implements Job {
     private int sendCount = 0;
 
     public static void main(String[] args) {
-        SpotBuyer spotBuyer = new SpotBuyer();
+        ONTSpotBuyer spotBuyer = new ONTSpotBuyer();
         spotBuyer.startUp();
 
-        StrategyCommon.timer("0/5 * * * * ?", SpotBuyer.class, symbol); // 4s 执行一次
+        StrategyCommon.timer("0/5 * * * * ?", ONTSpotBuyer.class, symbol); // 4s 执行一次
     }
 
 
@@ -70,9 +70,8 @@ public class SpotBuyer implements Job {
             // TODO 9:53 PM  : local end
 
             // TODO 8:14 PM  :  服务器 start
-            spot.setBaseCurrency("ht");
+            spot.setBaseCurrency("ont");
             spot.setQuoteCurrency("usdt");
-            symbol = "htusdt";
             double totalBalance = 2000;
             // TODO 9:50 PM  : 服务器 end
 

@@ -4,11 +4,6 @@ import java.math.BigDecimal;
 
 public class Constants {
 
-    public static final String SERVER_BASE_CURRENCY = "doge";
-    public static final String SERVER_QUOTE_CURRENCY = "usdt";
-    public static final String SERVER_SYMBOL = "dogeusdt";
-    public static final double SERVER_USDT = 200.0;
-
     public static final String API_KEY = "cbcbf07e-6c66e380-vf25treb80-6c28c";
     public static final String SECRET_KEY = "";
 
