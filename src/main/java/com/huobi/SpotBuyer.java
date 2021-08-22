@@ -8,7 +8,6 @@ import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -30,7 +29,7 @@ public class SpotBuyer implements Job {
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static String symbol = "htusdt";
     private static BigDecimal usdtBalance = new BigDecimal("0");
-    private static final boolean insufficientFound = true;
+    private static boolean insufficientFound = true;
 
 
     Logger logger = LoggerFactory.getLogger(SpotBuyer.class);
@@ -259,7 +258,7 @@ public class SpotBuyer implements Job {
         }
     }
 
-    public static void setInsufficientFound(boolean insufficientFound) {
-        insufficientFound = insufficientFound;
+    public static void setInsufficientFound(boolean flag) {
+        insufficientFound = flag;
     }
 }
