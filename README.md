@@ -26,3 +26,14 @@
  <li>7. 高频策略: 做单频率快,有波动就有收益,适合横盘行情
         稳健策略: 做单频率适中,适合涨跌幅较小的行情
         保守策略: 适合大涨大跌的
+        
+ <li>8.  startup.sh  在服务器运行时用不同的 jar 包,选择不同的端口号
+ 
+# #!/bin/bash
+ cd ht/
+ java -jar -Dserver.port=8080 ht.jar &
+ 
+ cd ../ont/
+ java -jar -Dserver.port=8081 ont.jar &
+ 
+ 

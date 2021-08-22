@@ -8,6 +8,7 @@ import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -52,26 +53,30 @@ public class SpotBuyer implements Job {
      */
     public void startUp() {
         try {
-            Scanner sc = new Scanner(System.in);
-            System.out.println("现货币种 spot currency: (BTC-USDT)");
-            String spotInputStr = sc.next();
-            String[] currencys = spotInputStr.split("-");
-            if (currencys.length == 2) {
-                spot.setBaseCurrency(currencys[0]);
-                spot.setQuoteCurrency(currencys[1]);
-                symbol = currencys[0] + currencys[1];
-            } else {//默认 USDT 交易对
-                spot.setBaseCurrency(spotInputStr);
-                spot.setQuoteCurrency("usdt");
-                symbol = spotInputStr + "usdt";
-            }
-            // TODO 8:14 PM  :  服务器
-//            spot.setBaseCurrency("ht");
-//            spot.setQuoteCurrency("usdt");
-//            symbol = "htusdt";
+            // TODO 9:53 PM  : local start
+//            Scanner sc = new Scanner(System.in);
+//            System.out.println("现货币种 spot currency: (BTC-USDT)");
+//            String spotInputStr = sc.next();
+//            String[] currencys = spotInputStr.split("-");
+//            if (currencys.length == 2) {
+//                spot.setBaseCurrency(currencys[0]);
+//                spot.setQuoteCurrency(currencys[1]);
+//                symbol = currencys[0] + currencys[1];
+//            } else {//默认 USDT 交易对
+//                spot.setBaseCurrency(spotInputStr);
+//                spot.setQuoteCurrency("usdt");
+//                symbol = spotInputStr + "usdt";
+//            }
+            // TODO 9:53 PM  : local end
+
+            // TODO 8:14 PM  :  服务器 start
+            spot.setBaseCurrency(Constants.SERVER_BASE_CURRENCY);
+            spot.setQuoteCurrency(Constants.SERVER_QUOTE_CURRENCY);
+            symbol = Constants.SERVER_SYMBOL;
+            double totalBalance = Constants.SERVER_USDT;
+            // TODO 9:50 PM  : 服务器 end
 
             spot.setSymbol(symbol);
-
 
             spotAccountId = HuobiUtil.getAccountIdByType("spot");
             pointAccountId = HuobiUtil.getAccountIdByType("point");
@@ -79,9 +84,8 @@ public class SpotBuyer implements Job {
 
             usdtBalance = usdtBalance.add(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
             System.out.println("分配到" + symbol + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
-            // TODO 8:14 PM  : 服务器
-//            double totalBalance = 1000.0;
-            double totalBalance = sc.nextDouble();
+            // TODO 9:57 PM  :  local
+//            double totalBalance = sc.nextDouble();
 
             spot.setTotalBalance(totalBalance);
 
@@ -97,8 +101,8 @@ public class SpotBuyer implements Job {
             HuobiUtil.setBaseInfo(spot);
             strategyTogether.setSpot(spot);
             strategyTogether.launch(usdtBalance);
-        } catch (SDKException sdkException) {
-            logger.error("====== SpotBuyer-startup: " + sdkException.getMessage() + "======");
+        } catch (Exception exception) {
+            logger.error("====== SpotBuyer-startup: " + exception.getMessage() + "======");
         }
 
     }

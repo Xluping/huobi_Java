@@ -4,6 +4,11 @@ import java.math.BigDecimal;
 
 public class Constants {
 
+    public static final String SERVER_BASE_CURRENCY = "doge";
+    public static final String SERVER_QUOTE_CURRENCY = "usdt";
+    public static final String SERVER_SYMBOL = "dogeusdt";
+    public static final double SERVER_USDT = 200.0;
+
     public static final String API_KEY = "cbcbf07e-6c66e380-vf25treb80-6c28c";
     public static final String SECRET_KEY = "";
 
@@ -24,7 +29,7 @@ public class Constants {
     public static final double LOW_RANGE = 70;   // 50-70%   <100
 
     // 策略区间内下单次数
-    public static final double HIGH_COUNT = 20;
+    public static final double HIGH_COUNT = 30;
     public static final double MEDIUM_COUNT = 4;
     public static final double LOW_COUNT = 2;
 
