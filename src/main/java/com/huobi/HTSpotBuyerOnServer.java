@@ -23,29 +23,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Luping
  * @create: 8/19/21 1:28 PM
  */
-public class AAVESpotBuyer implements Job {
+public class HTSpotBuyerOnServer implements Job {
+    private static final String symbol = "htusdt";
+    private static volatile boolean insufficientFound = true;
+    private static volatile boolean balanceChanged = false;
     private final BigDecimal alertPointBalance = new BigDecimal("50");
-    private final static Spot spot = new Spot();
-    private final static StrategyTogether strategyTogether = new StrategyTogether();
-    private final AtomicInteger orderCount = new AtomicInteger(0);
-    private static final String symbol = "aaveusdt";
-    private static BigDecimal usdtBalance = new BigDecimal("0");
-    private static boolean insufficientFound = true;
-
-
-    Logger logger = LoggerFactory.getLogger(AAVESpotBuyer.class);
     private Long spotAccountId = 14086863L;
     private Long pointAccountId = 14424186L;
     private final boolean alertSend = false;
     private String currentStrategy = "high";
+    private final static Spot spot = new Spot();
+    private final static StrategyTogether strategyTogether = new StrategyTogether();
+    private final AtomicInteger orderCount = new AtomicInteger(0);
+    private static BigDecimal usdtBalance = new BigDecimal("0");
+
+    Logger logger = LoggerFactory.getLogger(AAVESpotBuyerOnServer.class);
 
     public static void main(String[] args) {
-        AAVESpotBuyer spotBuyer = new AAVESpotBuyer();
+        HTSpotBuyerOnServer spotBuyer = new HTSpotBuyerOnServer();
         spotBuyer.startUp();
 
-        StrategyCommon.timer("0/5 * * * * ?", AAVESpotBuyer.class, symbol); // 4s 执行一次
+        StrategyCommon.timer("0/5 * * * * ?", HTSpotBuyerOnServer.class, symbol); // 4s 执行一次
     }
-
 
     /**
      * 设置基本参数
@@ -53,7 +52,7 @@ public class AAVESpotBuyer implements Job {
     public void startUp() {
         try {
             // TODO 8:14 PM  :  服务器 start
-            spot.setBaseCurrency("aave");
+            spot.setBaseCurrency("ht");
             spot.setQuoteCurrency("usdt");
             BigDecimal totalBalance = new BigDecimal("2000");
             // TODO 9:50 PM  : 服务器 end
@@ -105,9 +104,6 @@ public class AAVESpotBuyer implements Job {
     public synchronized void priceListener() {
         try {
             BigDecimal latestPrice = HuobiUtil.getCurrentTradPrice(symbol);
-            BigDecimal currentBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
-            usdtBalance = usdtBalance.max(currentBalance);
-
             // 点卡
 //            BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
 //            if (!alertSend && pointBalance.compareTo(alertPointBalance) < 0) {
@@ -134,6 +130,8 @@ public class AAVESpotBuyer implements Job {
                 BigDecimal buyPrice = buyOrder.getPrice();
                 BigDecimal buyAmount = buyOrder.getAmount();
                 if (buyOrder.getState().trim().equalsIgnoreCase("filled")) {
+                    balanceChanged = true;
+
                     logger.error("====== " + symbol + "-SpotBuyer-买单已成交 : " + buyOrder.toString() + " ======");
                     BigDecimal cost = buyAmount.multiply(buyPrice);
                     StrategyCommon.setFee(cost);
@@ -154,6 +152,8 @@ public class AAVESpotBuyer implements Job {
                 Order sellOrder = HuobiUtil.getOrderByOrderId(orderId);
 
                 if (sellOrder.getState().trim().equalsIgnoreCase("filled")) {
+                    balanceChanged = true;
+
                     logger.error("====== " + symbol + "-SpotBuyer-卖单已成交 : " + sellOrder.toString() + " ======");
                     logger.info(sellOrder.toString());
                     BigDecimal sellPrice = sellOrder.getPrice();
@@ -190,6 +190,10 @@ public class AAVESpotBuyer implements Job {
 
                 strategyTogether.launch(usdtBalance);
 
+            }
+            if (balanceChanged) { //订单成交后,更新余额
+                BigDecimal currentBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+                usdtBalance = usdtBalance.max(currentBalance);
             }
 
             //检测是否需要下单

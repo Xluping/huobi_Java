@@ -133,7 +133,7 @@
                             <finalName>ht</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.HTSpotBuyer</mainClass>
+                                    <mainClass>com.huobi.HTSpotBuyerOnServer</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -151,7 +151,7 @@
                             <finalName>ont</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.ONTSpotBuyer</mainClass>
+                                    <mainClass>com.huobi.ONTSpotBuyerOnServer</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -169,7 +169,7 @@
                             <finalName>aave</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.AAVESpotBuyer</mainClass>
+                                    <mainClass>com.huobi.AAVESpotBuyerOnServer</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -187,7 +187,7 @@
                             <finalName>doge</finalName>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.DOGESpotBuyer</mainClass>
+                                    <mainClass>com.huobi.DOGESpotBuyerOnServer</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>

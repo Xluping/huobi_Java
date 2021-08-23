@@ -5,10 +5,13 @@ import com.huobi.client.req.trade.CreateOrderRequest;
 import com.huobi.client.req.trade.OpenOrdersRequest;
 import com.huobi.constant.Constants;
 import com.huobi.constant.enums.OrderSideEnum;
+import com.huobi.exception.SDKException;
 import com.huobi.model.account.Point;
 import com.huobi.model.trade.Order;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -19,6 +22,7 @@ public class StrategyCommonTest {
     private Long accountId;
     String symbol = "htusdt";
     BigDecimal amount = new BigDecimal("5");
+    Logger logger = LoggerFactory.getLogger(StrategyCommonTest.class);
 
     @Before
     public void setUp() throws Exception {
@@ -45,14 +49,23 @@ public class StrategyCommonTest {
 
     @Test
     public void placeBuyOrder() {
-        BigDecimal buyPrice = HuobiUtil.getCurrentTradPrice(symbol);
-        String clientOrderId = "LUPING" + System.nanoTime();
+        try {
 
-        CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(accountId, clientOrderId, symbol, new BigDecimal("9"), amount);
-        CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
+
+            String symbol = "aaveusdt";
+            BigDecimal buyPrice = HuobiUtil.getCurrentTradPrice(symbol);
+            String clientOrderId = "LUPING" + System.nanoTime();
+
+            CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(accountId, clientOrderId, symbol, buyPrice, new BigDecimal("0.001"));
+            CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
 //        buyOrderMap.putIfAbsent(clientOrderId, amount);
-        System.out.println("====== create buy-limit order at:" + buyPrice.toString() + " ======");
-        System.out.println("====== 下 BUY 单, clientOrderId: " + clientOrderId + " ======");
+            System.out.println("====== create buy-limit order at:" + buyPrice.toString() + " ======");
+            System.out.println("====== 下 BUY 单, clientOrderId: " + clientOrderId + " ======");
+        } catch (SDKException e) {
+            logger.error("====== StrategyCommonTest-placeBuyOrder: " + e.getErrCode() + "======");
+            logger.error("====== StrategyCommonTest-placeBuyOrder: " + e.getMessage() + "======");
+
+        }
     }
 
 

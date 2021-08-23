@@ -53,11 +53,11 @@ public class StrategyTogether extends BaseStrategy {
 
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(portionHigh) >= 0) {
-            SpotBuyer.setInsufficientFound(false);
+            SpotBuyerLocal.setInsufficientFound(false);
             StrategyCommon.placeBuyOrder(spot, currentTradPrice, portionHigh);
         } else {
             logger.error("====== StrategyTogether-launch: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
-            SpotBuyer.setInsufficientFound(true);
+            SpotBuyerLocal.setInsufficientFound(true);
         }
 
     }

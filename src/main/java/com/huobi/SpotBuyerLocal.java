@@ -24,28 +24,29 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Luping
  * @create: 8/19/21 1:28 PM
  */
-public class SpotBuyer implements Job {
+public class SpotBuyerLocal implements Job {
     private final BigDecimal alertPointBalance = new BigDecimal("50");
     private final static Spot spot = new Spot();
     private final static StrategyTogether strategyTogether = new StrategyTogether();
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static String symbol = "htusdt";
     private static BigDecimal usdtBalance = new BigDecimal("0");
-    private static boolean insufficientFound = true;
+    private static volatile boolean insufficientFound = true;
+    private static volatile boolean balanceChanged = false;
 
 
-    Logger logger = LoggerFactory.getLogger(SpotBuyer.class);
+    Logger logger = LoggerFactory.getLogger(SpotBuyerLocal.class);
     private Long spotAccountId = 14086863L;
     private Long pointAccountId = 14424186L;
-    private boolean alertSend = false;
+    private final boolean alertSend = false;
     private String currentStrategy = "high";
     private int sendCount = 0;
 
     public static void main(String[] args) {
-        SpotBuyer spotBuyer = new SpotBuyer();
-        spotBuyer.startUp();
+        SpotBuyerLocal spotBuyerLocal = new SpotBuyerLocal();
+        spotBuyerLocal.startUp();
 
-        StrategyCommon.timer("0/5 * * * * ?", SpotBuyer.class, symbol); // 4s 执行一次
+        StrategyCommon.timer("0/5 * * * * ?", SpotBuyerLocal.class, symbol); // 4s 执行一次
     }
 
 
@@ -116,21 +117,19 @@ public class SpotBuyer implements Job {
     public synchronized void priceListener() {
         try {
             BigDecimal latestPrice = HuobiUtil.getCurrentTradPrice(symbol);
-            BigDecimal currentBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
-            usdtBalance = usdtBalance.max(currentBalance);
 
             // 点卡
-            BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
-            if (!alertSend && pointBalance.compareTo(alertPointBalance) < 0) {
-                logger.error("====== SpotBuyer-点卡余额: " + pointBalance.toString() + " ======");
-                HuobiUtil.weChatPusher("点卡余额不足,需要充值. " + pointBalance.toString(), 1);
-                alertSend = true;
-
-            }
-            if (alertSend && pointBalance.compareTo(alertPointBalance) > 0) {
-                alertSend = false;
-                logger.error("====== SpotBuyer-点卡余额: " + pointBalance.toString() + " ======");
-            }
+//            BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
+//            if (!alertSend && pointBalance.compareTo(alertPointBalance) < 0) {
+//                logger.error("====== SpotBuyer-点卡余额: " + pointBalance.toString() + " ======");
+//                HuobiUtil.weChatPusher("点卡余额不足,需要充值. " + pointBalance.toString(), 1);
+//                alertSend = true;
+//
+//            }
+//            if (alertSend && pointBalance.compareTo(alertPointBalance) > 0) {
+//                alertSend = false;
+//                logger.error("====== SpotBuyer-点卡余额: " + pointBalance.toString() + " ======");
+//            }
 
             ConcurrentHashMap<String, BigDecimal> buyOrderMap = StrategyCommon.getBuyOrderMap();
             ConcurrentHashMap<Long, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
@@ -145,6 +144,7 @@ public class SpotBuyer implements Job {
                 BigDecimal buyPrice = buyOrder.getPrice();
                 BigDecimal buyAmount = buyOrder.getAmount();
                 if (buyOrder.getState().trim().equalsIgnoreCase("filled")) {
+                    balanceChanged = true;
                     logger.error("====== SpotBuyer-买单已成交 : " + buyOrder.toString() + " ======");
                     BigDecimal cost = buyAmount.multiply(buyPrice);
                     StrategyCommon.setFee(cost);
@@ -165,6 +165,7 @@ public class SpotBuyer implements Job {
                 Order sellOrder = HuobiUtil.getOrderByOrderId(orderId);
 
                 if (sellOrder.getState().trim().equalsIgnoreCase("filled")) {
+                    balanceChanged = true;
                     logger.error("====== SpotBuyer-卖单已成交 : " + sellOrder.toString() + " ======");
                     logger.info(sellOrder.toString());
                     BigDecimal sellPrice = sellOrder.getPrice();
@@ -179,6 +180,10 @@ public class SpotBuyer implements Job {
                     sellIterator.remove();
                 }
 
+            }
+            if (balanceChanged) { //订单成交后,更新余额
+                BigDecimal currentBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+                usdtBalance = usdtBalance.max(currentBalance);
             }
 
             //本轮买单已全部卖出. 重启应用
