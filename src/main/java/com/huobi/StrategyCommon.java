@@ -97,7 +97,7 @@ public class StrategyCommon {
         BigDecimal orderValue = new BigDecimal("0");
         //最小下单金额
         if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== " + spot.getSymbol() + "-StrategyCommon-placeSellOrder: 按最小下单金额下单 BUY" + spot.getMinOrderValue() + " ======");
+            logger.error("====== " + spot.getSymbol() + "-StrategyCommon-placeSellOrder: 按最小下单金额下单 BUY " + spot.getMinOrderValue() + " ======");
 
             orderValue = orderValue.add(spot.getMinOrderValue());
         } else {
@@ -115,7 +115,7 @@ public class StrategyCommon {
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
             orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
-            logger.error("====== " + spot.getSymbol() + "-StrategyCommon-placeSellOrder: 按最小下单币数下单 BUY" + spot.getLimitOrderMinOrderAmt() + "======");
+            logger.error("====== " + spot.getSymbol() + "-StrategyCommon-placeSellOrder: 按最小下单币数下单 BUY " + spot.getLimitOrderMinOrderAmt() + "======");
 
         } else {
             orderAmount = orderAmount.add(coinAmount);

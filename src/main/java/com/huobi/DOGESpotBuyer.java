@@ -38,7 +38,6 @@ public class DOGESpotBuyer implements Job {
     private Long pointAccountId = 14424186L;
     private final boolean alertSend = false;
     private String currentStrategy = "high";
-    private int sendCount = 0;
 
     public static void main(String[] args) {
         DOGESpotBuyer spotBuyer = new DOGESpotBuyer();
@@ -238,13 +237,6 @@ public class DOGESpotBuyer implements Job {
             }
         } catch (SDKException e) {
             logger.error("====== " + symbol + "SpotBuyer-priceListener: " + e.getMessage() + "======");
-            if (e.getMessage().contains("insufficient")) {
-                sendCount++;
-                if (sendCount == 50) {
-                    HuobiUtil.weChatPusher("账户余额不足!!", 2);
-                    sendCount = 0;
-                }
-            }
         }
     }
 
