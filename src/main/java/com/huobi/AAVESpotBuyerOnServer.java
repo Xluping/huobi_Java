@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @create: 8/19/21 1:28 PM
  */
 public class AAVESpotBuyerOnServer implements Job {
-    private static final String symbol = "aaveusdt";
+    private static final String SYMBOL = "aaveusdt";
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
     private final BigDecimal alertPointBalance = new BigDecimal("50");
@@ -44,7 +44,7 @@ public class AAVESpotBuyerOnServer implements Job {
         AAVESpotBuyerOnServer spotBuyer = new AAVESpotBuyerOnServer();
         spotBuyer.startUp();
 
-        StrategyCommon.timer("0/5 * * * * ?", AAVESpotBuyerOnServer.class, symbol); // 4s 执行一次
+        StrategyCommon.timer("0/5 * * * * ?", AAVESpotBuyerOnServer.class, SYMBOL); // 4s 执行一次
     }
 
 
@@ -59,14 +59,14 @@ public class AAVESpotBuyerOnServer implements Job {
             BigDecimal totalBalance = new BigDecimal("2000");
             // TODO 9:50 PM  : 服务器 end
 
-            spot.setSymbol(symbol);
+            spot.setSymbol(SYMBOL);
 
             spotAccountId = HuobiUtil.getAccountIdByType("spot");
             pointAccountId = HuobiUtil.getAccountIdByType("point");
             spot.setAccountId(spotAccountId);
 
             usdtBalance = usdtBalance.add(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
-            System.out.println("分配到" + symbol + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
+            System.out.println("分配到" + SYMBOL + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
 
 
             spot.setTotalBalance(totalBalance);
@@ -82,15 +82,15 @@ public class AAVESpotBuyerOnServer implements Job {
             lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
             spot.setLowStrategyBalance(lowBalance);
 
-            logger.error(symbol + "SpotBuyer-分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
-            logger.error(symbol + "SpotBuyer-分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
-            logger.error(symbol + "SpotBuyer-分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
+            logger.error(SYMBOL + "SpotBuyer-分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
+            logger.error(SYMBOL + "SpotBuyer-分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
+            logger.error(SYMBOL + "SpotBuyer-分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
             HuobiUtil.setBaseInfo(spot);
             strategyTogether.setSpot(spot);
-            HuobiUtil.cancelOpenOrders(spotAccountId, symbol, OrderSideEnum.BUY);
+            HuobiUtil.cancelOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.BUY);
             strategyTogether.launch(usdtBalance);
         } catch (Exception exception) {
-            logger.error("====== " + symbol + "SpotBuyer-startup: " + exception.getMessage() + "======");
+            logger.error("====== " + SYMBOL + "SpotBuyer-startup: " + exception.getMessage() + "======");
         }
 
     }
@@ -105,7 +105,7 @@ public class AAVESpotBuyerOnServer implements Job {
      */
     public synchronized void priceListener() {
         try {
-            BigDecimal latestPrice = HuobiUtil.getCurrentTradPrice(symbol);
+            BigDecimal latestPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
             // 点卡
 //            BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
 //            if (!alertSend && pointBalance.compareTo(alertPointBalance) < 0) {
@@ -134,7 +134,7 @@ public class AAVESpotBuyerOnServer implements Job {
                 if (buyOrder.getState().trim().equalsIgnoreCase("filled")) {
                     balanceChanged = true;
 
-                    logger.error("====== " + symbol + "-SpotBuyer-买单已成交 : " + buyOrder.toString() + " ======");
+                    logger.error("====== " + SYMBOL + "-SpotBuyer-买单已成交 : " + buyOrder.toString() + " ======");
                     BigDecimal cost = buyAmount.multiply(buyPrice);
                     StrategyCommon.setFee(cost);
                     StrategyCommon.setFee(buyOrder.getFilledFees());
@@ -142,7 +142,7 @@ public class AAVESpotBuyerOnServer implements Job {
                     orderCount.getAndIncrement();
                     buyIterator.remove();
                 } else if (buyOrder.getState().trim().equalsIgnoreCase("canceled")) {
-                    logger.error("====== " + symbol + "-SpotBuyer-买单已取消 : " + buyOrder.toString() + " ======");
+                    logger.error("====== " + SYMBOL + "-SpotBuyer-买单已取消 : " + buyOrder.toString() + " ======");
                     orderCount.getAndDecrement();
                     buyIterator.remove();
                 }
@@ -156,7 +156,7 @@ public class AAVESpotBuyerOnServer implements Job {
                 if (sellOrder.getState().trim().equalsIgnoreCase("filled")) {
                     balanceChanged = true;
 
-                    logger.error("====== " + symbol + "-SpotBuyer-卖单已成交 : " + sellOrder.toString() + " ======");
+                    logger.error("====== " + SYMBOL + "-SpotBuyer-卖单已成交 : " + sellOrder.toString() + " ======");
                     logger.info(sellOrder.toString());
                     BigDecimal sellPrice = sellOrder.getPrice();
                     BigDecimal sellAmount = sellOrder.getAmount();
@@ -166,27 +166,27 @@ public class AAVESpotBuyerOnServer implements Job {
                     orderCount.getAndDecrement();
                     sellIterator.remove();
                 } else if (sellOrder.getState().trim().equalsIgnoreCase("canceled")) {
-                    logger.error("====== " + symbol + "-SpotBuyer-卖单已取消 : " + sellOrder.toString() + " ======");
+                    logger.error("====== " + SYMBOL + "-SpotBuyer-卖单已取消 : " + sellOrder.toString() + " ======");
                     sellIterator.remove();
                 }
 
             }
             //本轮买单已全部卖出. 重启应用
             if (sellOrderMap.size() == 0 && !insufficientFound) {
-                logger.error("====== " + symbol + "-SpotBuyer-开始清理残余买单.======");
+                logger.error("====== " + SYMBOL + "-SpotBuyer-开始清理残余买单.======");
                 Iterator<Map.Entry<String, BigDecimal>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
 
                 while (iterator.hasNext()) {
                     Map.Entry<String, BigDecimal> entry = iterator.next();
                     String clientId = entry.getKey();
                     Order remainOrder = HuobiUtil.getOrderByClientId(clientId);
-                    logger.error("====== " + symbol + "-SpotBuyer-正在取消订单: " + remainOrder.toString() + "======");
+                    logger.error("====== " + SYMBOL + "-SpotBuyer-正在取消订单: " + remainOrder.toString() + "======");
                     HuobiUtil.cancelOrder(clientId);
                     iterator.remove();
                 }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
-                HuobiUtil.weChatPusher(symbol + " 最新收益: " + pureProfit.toString(), 2);
+                HuobiUtil.weChatPusher(SYMBOL + " 最新收益: " + pureProfit.toString(), 2);
 
                 orderCount.getAndSet(0);
 
@@ -209,7 +209,7 @@ public class AAVESpotBuyerOnServer implements Job {
                 if (i + 1 >= Constants.MEDIUM_COUNT) {
                     currentStrategy = "low";
                 }
-                logger.error("====== " + symbol + "-SpotBuyer-当前策略: " + currentStrategy + " ======");
+                logger.error("====== " + SYMBOL + "-SpotBuyer-当前策略: " + currentStrategy + " ======");
 
             }
             //之前买单全部成交后, 才考虑下单.
@@ -234,14 +234,14 @@ public class AAVESpotBuyerOnServer implements Job {
                         StrategyCommon.placeBuyOrder(spot, priceList.get(i), usdtPortion);
                     } else {
                         setInsufficientFound(true);
-                        logger.error("====== " + symbol + "-SpotBuyer-priceListener: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
+                        logger.error("====== " + SYMBOL + "-SpotBuyer-priceListener: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
 
                     }
                 }
 
             }
         } catch (SDKException e) {
-            logger.error("====== " + symbol + "SpotBuyer-priceListener: " + e.getMessage() + "======");
+            logger.error("====== " + SYMBOL + "SpotBuyer-priceListener: " + e.getMessage() + "======");
         }
     }
 

@@ -25,22 +25,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @create: 8/19/21 1:28 PM
  */
 public class SpotBuyerLocal implements Job {
-    private final BigDecimal alertPointBalance = new BigDecimal("50");
-    private final static Spot spot = new Spot();
-    private final static StrategyTogether strategyTogether = new StrategyTogether();
-    private final AtomicInteger orderCount = new AtomicInteger(0);
     private static String symbol = "htusdt";
-    private static BigDecimal usdtBalance = new BigDecimal("0");
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
-
-
-    Logger logger = LoggerFactory.getLogger(SpotBuyerLocal.class);
+    private final BigDecimal alertPointBalance = new BigDecimal("50");
     private Long spotAccountId = 14086863L;
     private Long pointAccountId = 14424186L;
     private final boolean alertSend = false;
     private String currentStrategy = "high";
-    private int sendCount = 0;
+    private final static Spot spot = new Spot();
+    private final static StrategyTogether strategyTogether = new StrategyTogether();
+    private final AtomicInteger orderCount = new AtomicInteger(0);
+    private static BigDecimal usdtBalance = new BigDecimal("0");
+
+    Logger logger = LoggerFactory.getLogger(AAVESpotBuyerOnServer.class);
 
     public static void main(String[] args) {
         SpotBuyerLocal spotBuyerLocal = new SpotBuyerLocal();
@@ -250,13 +248,6 @@ public class SpotBuyerLocal implements Job {
             }
         } catch (SDKException e) {
             logger.error("====== SpotBuyer-priceListener: " + e.getMessage() + "======");
-            if (e.getMessage().contains("insufficient")) {
-                sendCount++;
-                if (sendCount == 50) {
-                    HuobiUtil.weChatPusher("账户余额不足!!", 2);
-                    sendCount = 0;
-                }
-            }
         }
     }
 
