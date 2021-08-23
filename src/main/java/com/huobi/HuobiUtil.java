@@ -148,13 +148,16 @@ public class HuobiUtil {
      * @return
      */
     public static void cancelOpenOrders(Long accountId, String symbol, OrderSideEnum orderSide) {
-        logger.info("=== HuobiUtil-cancelOpenOrders: 取消 " + symbol + " 的所有 " + orderSide.toString() + " 单 ======");
+        logger.error("====== HuobiUtil-cancelOpenOrders: 取消 " + symbol + " 的所有 " + orderSide.toString() + " 单 ======");
 
         List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
                 .symbol(symbol)
                 .side(orderSide)
                 .build());
+
+        logger.error("====== HuobiUtil-cancelOpenOrders: 之前有 " + orderList.size() + " 个订单======");
+
         orderList.forEach(order -> {
             CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId());
         });
@@ -170,8 +173,7 @@ public class HuobiUtil {
     public static int cancelOrder(String clientOrderId) {
         int code = CurrentAPI.getApiInstance().getTradeClient().cancelOrder(clientOrderId);
         if (code == 7) {
-            logger.info("=== HuobiUtil-cancelOrder: " + clientOrderId + " ======");
-            logger.info("=== HuobiUtil-cancelOrder: canceled ======");
+            logger.error("=== HuobiUtil-cancelOrder: " + clientOrderId + " canceled ======");
         }
         return code;
     }

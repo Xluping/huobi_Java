@@ -81,6 +81,18 @@ public class HuobiUtilTest {
 
     @Test
     public void cancelOrder() {
+
+        List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
+                .accountId(accountId)
+                .symbol(symbol)
+                .side(OrderSideEnum.BUY)
+                .build());
+
+        logger.error("====== HuobiUtil-cancelOpenOrders: 之前有 " + orderList.size() + " 个订单======");
+
+        orderList.forEach(order -> {
+            CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId());
+        });
     }
 
     @Test

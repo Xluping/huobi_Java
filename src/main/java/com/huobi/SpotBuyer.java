@@ -77,16 +77,21 @@ public class SpotBuyer implements Job {
             usdtBalance = usdtBalance.add(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
             System.out.println("分配到" + symbol + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
             // TODO 9:57 PM  :  local
-            double totalBalance = sc.nextDouble();
+            BigDecimal totalBalance = sc.nextBigDecimal();
 
             spot.setTotalBalance(totalBalance);
 
-            double highBalance = totalBalance * Constants.HIGH_RATIO;
+            BigDecimal highBalance = totalBalance.multiply(new BigDecimal(Constants.HIGH_RATIO.toString()));
+            highBalance = highBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
             spot.setHighStrategyBalance(highBalance);
-            double mediumBalance = totalBalance * Constants.MEDIUM_RATIO;
+            BigDecimal mediumBalance = totalBalance.multiply(new BigDecimal(Constants.MEDIUM_RATIO.toString()));
+            mediumBalance = mediumBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
             spot.setMediumStrategyBalance(mediumBalance);
-            double lowBalance = totalBalance * Constants.LOW_RATIO;
+            BigDecimal lowBalance = totalBalance.multiply(new BigDecimal(Constants.LOW_RATIO.toString()));
+            lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
             spot.setLowStrategyBalance(lowBalance);
+
             logger.error("SpotBuyer-分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
             logger.error("SpotBuyer-分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
             logger.error("SpotBuyer-分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
@@ -108,7 +113,7 @@ public class SpotBuyer implements Job {
     /**
      * 监听价格变化
      */
-    public void priceListener() {
+    public synchronized void priceListener() {
         try {
             BigDecimal latestPrice = HuobiUtil.getCurrentTradPrice(symbol);
             BigDecimal currentBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
@@ -127,12 +132,12 @@ public class SpotBuyer implements Job {
                 logger.error("====== SpotBuyer-点卡余额: " + pointBalance.toString() + " ======");
             }
 
-            // 处理之前的买单,卖单
             ConcurrentHashMap<String, BigDecimal> buyOrderMap = StrategyCommon.getBuyOrderMap();
             ConcurrentHashMap<Long, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
             Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> buyIterator = buyOrderMap.entrySet().iterator();
             Iterator<ConcurrentHashMap.Entry<Long, BigDecimal>> sellIterator = sellOrderMap.entrySet().iterator();
 
+            // 处理之前的买单,卖单
             while (buyIterator.hasNext()) {
                 Map.Entry<String, BigDecimal> entry = buyIterator.next();
                 String clientId = entry.getKey();
@@ -175,17 +180,18 @@ public class SpotBuyer implements Job {
                 }
 
             }
+
             //本轮买单已全部卖出. 重启应用
             if (sellOrderMap.size() == 0 && !insufficientFound) {
                 logger.error("====== SpotBuyer-开始清理残余买单.======");
-
-                while (buyIterator.hasNext()) {
-                    Map.Entry<String, BigDecimal> entry = buyIterator.next();
+                Iterator<Map.Entry<String, BigDecimal>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<String, BigDecimal> entry = iterator.next();
                     String clientId = entry.getKey();
                     Order remainOrder = HuobiUtil.getOrderByClientId(clientId);
                     logger.error("====== SpotBuyer-正在取消订单: " + remainOrder.toString() + "======");
                     HuobiUtil.cancelOrder(clientId);
-                    buyIterator.remove();
+                    iterator.remove();
                 }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
@@ -213,23 +219,22 @@ public class SpotBuyer implements Job {
 
             if (orderCount.get() == i && buyOrderMap.size() == 0) {
                 if (i < priceList.size()) {
-                    double usdtPortion = 10.0;
+                    BigDecimal usdtPortion = new BigDecimal("10");
                     switch (currentStrategy) {
                         case "high":
-                            usdtPortion = spot.getHighStrategyBalance() / Constants.HIGH_COUNT;
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT), RoundingMode.HALF_UP);
                             break;
                         case "medium":
-                            usdtPortion = spot.getMediumStrategyBalance() / Constants.MEDIUM_COUNT;
+                            usdtPortion = spot.getMediumStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT), RoundingMode.HALF_UP);
                             break;
                         case "low":
-                            usdtPortion = spot.getLowStrategyBalance() / Constants.LOW_COUNT;
+                            usdtPortion = spot.getLowStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT), RoundingMode.HALF_UP);
                             break;
 
                     }
-                    BigDecimal usdt = new BigDecimal(usdtPortion);
-                    if (usdtBalance.compareTo(usdt) >= 0) {
+                    if (usdtBalance.compareTo(usdtPortion) >= 0) {
                         setInsufficientFound(false);
-                        StrategyCommon.placeBuyOrder(spot, priceList.get(i), usdt);
+                        StrategyCommon.placeBuyOrder(spot, priceList.get(i), usdtPortion);
                     } else {
                         setInsufficientFound(true);
                         logger.error("====== SpotBuyer-priceListener: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");

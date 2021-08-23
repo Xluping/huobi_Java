@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /**
  * @program: huobi-client
@@ -17,9 +18,9 @@ import java.math.BigDecimal;
 public class StrategyTogether extends BaseStrategy {
     Logger logger = LoggerFactory.getLogger(StrategyTogether.class);
     private Spot spot;
-    private double portionHigh;
-    private double portionMedium;
-    private double portionLow;
+    private BigDecimal portionHigh;
+    private BigDecimal portionMedium;
+    private BigDecimal portionLow;
 
     public StrategyTogether() {
     }
@@ -27,9 +28,15 @@ public class StrategyTogether extends BaseStrategy {
 
     public void setSpot(Spot spot) {
         this.spot = spot;
-        this.portionHigh = spot.getHighStrategyBalance() / Constants.HIGH_COUNT;
-        this.portionMedium = spot.getMediumStrategyBalance() / Constants.MEDIUM_COUNT;
-        this.portionLow = spot.getLowStrategyBalance() / Constants.LOW_COUNT;
+        this.portionHigh = spot.getHighStrategyBalance().divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT)), RoundingMode.HALF_UP);
+        this.portionHigh = portionHigh.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+        this.portionMedium = spot.getMediumStrategyBalance().divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT)), RoundingMode.HALF_UP);
+        this.portionMedium = portionMedium.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+        this.portionLow = spot.getLowStrategyBalance().divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT)), RoundingMode.HALF_UP);
+        this.portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
     }
 
     public synchronized void launch(BigDecimal usdtBalance) {
@@ -45,10 +52,9 @@ public class StrategyTogether extends BaseStrategy {
         StrategyCommon.calculateBuyPriceList(currentTradPrice, spot.getPricePrecision());
 
         // 启动后,根据当前价格下单 buy .
-        BigDecimal usdt = new BigDecimal(portionHigh);
-        if (usdtBalance.compareTo(usdt) >= 0) {
+        if (usdtBalance.compareTo(portionHigh) >= 0) {
             SpotBuyer.setInsufficientFound(false);
-            StrategyCommon.placeBuyOrder(spot, currentTradPrice, usdt);
+            StrategyCommon.placeBuyOrder(spot, currentTradPrice, portionHigh);
         } else {
             logger.error("====== StrategyTogether-launch: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
             SpotBuyer.setInsufficientFound(true);

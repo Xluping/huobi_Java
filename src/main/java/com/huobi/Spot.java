@@ -16,10 +16,10 @@ public class Spot {
     private String quoteCurrency;// USDT
     private int pricePrecision;
     private int amountPrecision;
-    private double totalBalance;// 分配到的总仓位  5:3:2
-    private double highStrategyBalance; // 高频仓位
-    private double mediumStrategyBalance; // 稳健仓位
-    private double lowStrategyBalance;// 保守仓位
+    private BigDecimal totalBalance;// 分配到的总仓位  5:3:2
+    private BigDecimal highStrategyBalance; // 高频仓位
+    private BigDecimal mediumStrategyBalance; // 稳健仓位
+    private BigDecimal lowStrategyBalance;// 保守仓位
     private int strategyOffset; // 策略分配: 高频 0-20%  稳健 20-50% 保守 50%+
     private int orderOffset; //下单间隔
     private BigDecimal limitOrderMinOrderAmt; //限价单最小下单量 ，以基础币种为单位
@@ -31,20 +31,20 @@ public class Spot {
 
     }
 
-    public String getSymbol() {
-        return symbol;
-    }
-
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
-
     public Long getAccountId() {
         return accountId;
     }
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
     }
 
     public String getBaseCurrency() {
@@ -63,31 +63,6 @@ public class Spot {
         this.quoteCurrency = quoteCurrency;
     }
 
-
-    public double getTotalBalance() {
-        return totalBalance;
-    }
-
-    public void setTotalBalance(double totalBalance) {
-        this.totalBalance = totalBalance;
-    }
-
-    public double getHighStrategyBalance() {
-        return highStrategyBalance;
-    }
-
-    public void setHighStrategyBalance(double highStrategyBalance) {
-        this.highStrategyBalance = highStrategyBalance;
-    }
-
-    public double getMediumStrategyBalance() {
-        return mediumStrategyBalance;
-    }
-
-    public void setMediumStrategyBalance(double mediumStrategyBalance) {
-        this.mediumStrategyBalance = mediumStrategyBalance;
-    }
-
     public int getPricePrecision() {
         return pricePrecision;
     }
@@ -104,11 +79,35 @@ public class Spot {
         this.amountPrecision = amountPrecision;
     }
 
-    public double getLowStrategyBalance() {
+    public BigDecimal getTotalBalance() {
+        return totalBalance;
+    }
+
+    public void setTotalBalance(BigDecimal totalBalance) {
+        this.totalBalance = totalBalance;
+    }
+
+    public BigDecimal getHighStrategyBalance() {
+        return highStrategyBalance;
+    }
+
+    public void setHighStrategyBalance(BigDecimal highStrategyBalance) {
+        this.highStrategyBalance = highStrategyBalance;
+    }
+
+    public BigDecimal getMediumStrategyBalance() {
+        return mediumStrategyBalance;
+    }
+
+    public void setMediumStrategyBalance(BigDecimal mediumStrategyBalance) {
+        this.mediumStrategyBalance = mediumStrategyBalance;
+    }
+
+    public BigDecimal getLowStrategyBalance() {
         return lowStrategyBalance;
     }
 
-    public void setLowStrategyBalance(double lowStrategyBalance) {
+    public void setLowStrategyBalance(BigDecimal lowStrategyBalance) {
         this.lowStrategyBalance = lowStrategyBalance;
     }
 
@@ -128,14 +127,6 @@ public class Spot {
         this.orderOffset = orderOffset;
     }
 
-    public BigDecimal getMinOrderValue() {
-        return minOrderValue;
-    }
-
-    public void setMinOrderValue(BigDecimal minOrderValue) {
-        this.minOrderValue = minOrderValue;
-    }
-
     public BigDecimal getLimitOrderMinOrderAmt() {
         return limitOrderMinOrderAmt;
     }
@@ -150,6 +141,14 @@ public class Spot {
 
     public void setSellMarketMinOrderAmt(BigDecimal sellMarketMinOrderAmt) {
         this.sellMarketMinOrderAmt = sellMarketMinOrderAmt;
+    }
+
+    public BigDecimal getMinOrderValue() {
+        return minOrderValue;
+    }
+
+    public void setMinOrderValue(BigDecimal minOrderValue) {
+        this.minOrderValue = minOrderValue;
     }
 
     @Override
