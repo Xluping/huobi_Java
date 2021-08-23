@@ -196,8 +196,8 @@ public class ONTSpotBuyer implements Job {
                 }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
-                logger.error("====== SpotBuyer-最新收益: " + pureProfit.toString() + " ======");
-                HuobiUtil.weChatPusher("最新收益: " + pureProfit.toString(), 2);
+                HuobiUtil.weChatPusher(symbol + " 最新收益: " + pureProfit.toString(), 2);
+
                 orderCount.getAndSet(0);
 
                 strategyTogether.launch(usdtBalance);

@@ -33,6 +33,7 @@ public class StrategyTogether extends BaseStrategy {
     }
 
     public synchronized void launch(BigDecimal usdtBalance) {
+        StrategyCommon.reset();
         HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error(spot.toString());
         logger.error("====== StrategyTogether-策略启动 ======");

@@ -174,6 +174,11 @@ public class StrategyCommon {
         return fee;
     }
 
+    public static void reset() {
+        profit = new BigDecimal("0");
+        fee = new BigDecimal("0");
+    }
+
     /**
      * 计算当前价格与挂单的价格之间的差距
      * 差距过大可以取消订单
