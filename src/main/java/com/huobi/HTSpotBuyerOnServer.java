@@ -64,7 +64,7 @@ public class HTSpotBuyerOnServer implements Job {
             spot.setAccountId(spotAccountId);
 
             usdtBalance = usdtBalance.add(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
-            System.out.println("分配到" + SYMBOL + "总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
+            System.out.println("分配到 " + SYMBOL + " 总仓位: ? " + spot.getQuoteCurrency() + " - 不能大于现有仓位,风险过高.");
 
 
             spot.setTotalBalance(totalBalance);
@@ -80,9 +80,9 @@ public class HTSpotBuyerOnServer implements Job {
             lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
             spot.setLowStrategyBalance(lowBalance);
 
-            logger.error(SYMBOL + "SpotBuyer-分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
-            logger.error(SYMBOL + "SpotBuyer-分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
-            logger.error(SYMBOL + "SpotBuyer-分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
+            logger.error(SYMBOL + "-SpotBuyer-分配到-高频-的仓位: " + highBalance + spot.getQuoteCurrency());
+            logger.error(SYMBOL + "-SpotBuyer-分配到-稳健-的仓位: " + mediumBalance + spot.getQuoteCurrency());
+            logger.error(SYMBOL + "-SpotBuyer-分配到-保守-的仓位: " + lowBalance + spot.getQuoteCurrency());
             HuobiUtil.setBaseInfo(spot);
             strategyTogether.setSpot(spot);
             HuobiUtil.cancelOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.BUY);
