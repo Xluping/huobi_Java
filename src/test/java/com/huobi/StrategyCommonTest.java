@@ -36,9 +36,9 @@ public class StrategyCommonTest {
         BigDecimal latestPrice = new BigDecimal("14.5678");
         ArrayList<Double> priceList = new ArrayList<Double>();
         BigDecimal base = new BigDecimal("1");
-        double gridPercentDouble = com.huobi.constant.Constants.HIGH_RANGE / Constants.HIGH_COUNT;
+        double gridPercentDouble = com.huobi.constant.Constants.HIGH_RANGE_1 / Constants.HIGH_COUNT_1;
         BigDecimal gridPercent = new BigDecimal(gridPercentDouble + "");
-        for (int i = 1; i <= Constants.HIGH_COUNT; i++) {
+        for (int i = 1; i <= Constants.HIGH_COUNT_1; i++) {
             BigDecimal down = gridPercent.multiply(new BigDecimal("" + i)).multiply(new BigDecimal("0.01"));
             System.out.println(down);
             BigDecimal buyPosition = base.subtract(down);

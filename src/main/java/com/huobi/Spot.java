@@ -25,6 +25,9 @@ public class Spot {
     private BigDecimal limitOrderMinOrderAmt; //限价单最小下单量 ，以基础币种为单位
     private BigDecimal sellMarketMinOrderAmt; // 市价卖单 最小下单量，以基础币种为单位
     private BigDecimal minOrderValue; //交易对限价单和市价买单最小下单金额 ，以计价币种为单位
+    private BigDecimal portionHigh;
+    private BigDecimal portionMedium;
+    private BigDecimal portionLow;
 
 
     public Spot() {
@@ -151,6 +154,30 @@ public class Spot {
         this.minOrderValue = minOrderValue;
     }
 
+    public BigDecimal getPortionHigh() {
+        return portionHigh;
+    }
+
+    public void setPortionHigh(BigDecimal portionHigh) {
+        this.portionHigh = portionHigh;
+    }
+
+    public BigDecimal getPortionMedium() {
+        return portionMedium;
+    }
+
+    public void setPortionMedium(BigDecimal portionMedium) {
+        this.portionMedium = portionMedium;
+    }
+
+    public BigDecimal getPortionLow() {
+        return portionLow;
+    }
+
+    public void setPortionLow(BigDecimal portionLow) {
+        this.portionLow = portionLow;
+    }
+
     @Override
     public String toString() {
         return "Spot{" +
@@ -169,6 +196,9 @@ public class Spot {
                 ", limitOrderMinOrderAmt=" + limitOrderMinOrderAmt +
                 ", sellMarketMinOrderAmt=" + sellMarketMinOrderAmt +
                 ", minOrderValue=" + minOrderValue +
+                ", portionHigh=" + portionHigh +
+                ", portionMedium=" + portionMedium +
+                ", portionLow=" + portionLow +
                 '}';
     }
 }

@@ -32,14 +32,30 @@ public class StrategyCommon {
 
     static Logger logger = LoggerFactory.getLogger(StrategyCommon.class);
 
-    public static synchronized ArrayList<BigDecimal> calculateBuyPriceList(BigDecimal latestPrice, int scale) {
+    public static synchronized ArrayList<BigDecimal> calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
         priceList.clear();
-        // 高频
-        calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE, Constants.HIGH_COUNT, new BigDecimal("0"));
-        //稳健
-        calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE - Constants.HIGH_RANGE, Constants.MEDIUM_COUNT, new BigDecimal(String.valueOf(Constants.HIGH_RANGE)));
-        //保守
-        calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE - Constants.MEDIUM_RANGE, Constants.LOW_COUNT, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE)));
+        if (strategy == 1) {
+            // 高频
+            calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE_1, Constants.HIGH_COUNT_1, new BigDecimal("0"));
+            //稳健
+            calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE_1 - Constants.HIGH_RANGE_1, Constants.MEDIUM_COUNT_1, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_1)));
+            //保守
+            calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE_1 - Constants.MEDIUM_RANGE_1, Constants.LOW_COUNT_1, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_1)));
+        } else if (strategy == 2) {
+            // 高频
+            calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE_2, Constants.HIGH_COUNT_2, new BigDecimal("0"));
+            //稳健
+            calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE_2 - Constants.HIGH_RANGE_2, Constants.MEDIUM_COUNT_2, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_2)));
+            //保守
+            calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE_2 - Constants.MEDIUM_RANGE_2, Constants.LOW_COUNT_2, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_2)));
+        } else if (strategy == 3) {
+            // 高频
+            calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE_3, Constants.HIGH_COUNT_3, new BigDecimal("0"));
+            //稳健
+            calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE_3 - Constants.HIGH_RANGE_3, Constants.MEDIUM_COUNT_3, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_3)));
+            //保守
+            calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE_3 - Constants.MEDIUM_RANGE_3, Constants.LOW_COUNT_3, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_3)));
+        }
 
         return priceList;
     }
@@ -74,12 +90,12 @@ public class StrategyCommon {
             BigDecimal downTo = goDown.add(pre);
             System.out.println(downTo);
             BigDecimal buyPosition = base.subtract(downTo);
-            logger.info("====== StrategyCommon-buyPosition(下跌到)= " + buyPosition.toString() + " * 100% ======");
+            logger.error("====== StrategyCommon-buyPosition(下跌到)= " + buyPosition.toString() + " * 100% ======");
             BigDecimal buyPrice = latestPrice.multiply(buyPosition).setScale(scale, RoundingMode.DOWN);
-            logger.info("====== StrategyCommon-buyPrice= " + buyPrice.toString() + " ======");
+            logger.error("====== StrategyCommon-buyPrice= " + buyPrice.toString() + " ======");
             priceList.add(buyPrice);
         }
-        logger.info("==============================================================");
+        logger.error("==============================================================");
     }
 
     /**
@@ -137,9 +153,16 @@ public class StrategyCommon {
      * @param buyPrice
      * @param coinAmount
      */
-    public static synchronized void placeSellOrder(Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
+    public static synchronized void placeSellOrder(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
         // 计算卖出价格 buyPrice * (1+offset);
-        BigDecimal sellPrice = buyPrice.multiply(Constants.SELL_OFFSET);
+        BigDecimal sellPrice = null;
+        if (currentStrategy == 1) {
+            sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
+        } else if (currentStrategy == 2) {
+            sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_2);
+        } else if (currentStrategy == 3) {
+            sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_3);
+        }
         // 价格,币数 有严格的小数位限制
         sellPrice = sellPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
         coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_DOWN);
@@ -185,14 +208,6 @@ public class StrategyCommon {
         fee = new BigDecimal("0");
     }
 
-    /**
-     * 计算当前价格与挂单的价格之间的差距
-     * 差距过大可以取消订单
-     */
-    public static boolean bigDiff(BigDecimal currentPrice, BigDecimal buyPrice) {
-        BigDecimal expectedSellPrice = buyPrice.multiply(Constants.SELL_OFFSET);
-        return currentPrice.compareTo(expectedSellPrice) > 0;
-    }
 
     /**
      * 定时任务

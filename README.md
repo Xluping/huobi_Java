@@ -37,4 +37,5 @@
  java -jar -Dserver.port=8081 ont.jar &
  
  
-<li>9. 本地运行的main class 是SpotBuyer , 通过控制台输入参数; 服务器上运行的是固定参数的 *SpotBuyerOnServer
+<li>9. 本地运行的main class 是SpotBuyer , 通过控制台输入参数; 
+服务器上运行的是固定参数的,用 SpotTemplate 为对应的币种创建运行类. 并在 pom 中添加execution 标签 
