@@ -131,6 +131,7 @@
                         <id>ht</id>
                         <configuration>
                             <finalName>ht</finalName>
+                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.HTSpotBuyerOnServer</mainClass>
@@ -149,6 +150,7 @@
                         <id>ont</id>
                         <configuration>
                             <finalName>ont</finalName>
+                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.ONTSpotBuyerOnServer</mainClass>
@@ -167,6 +169,7 @@
                         <id>aave</id>
                         <configuration>
                             <finalName>aave</finalName>
+                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.AAVESpotBuyerOnServer</mainClass>
@@ -185,6 +188,7 @@
                         <id>doge</id>
                         <configuration>
                             <finalName>doge</finalName>
+                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.DOGESpotBuyerOnServer</mainClass>

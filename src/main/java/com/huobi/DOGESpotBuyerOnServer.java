@@ -36,6 +36,7 @@ public class DOGESpotBuyerOnServer implements Job {
     private final static StrategyTogether strategyTogether = new StrategyTogether();
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static BigDecimal usdtBalance = new BigDecimal("0");
+    private static final AtomicInteger ticker = new AtomicInteger();
 
     Logger logger = LoggerFactory.getLogger(AAVESpotBuyerOnServer.class);
 
@@ -185,8 +186,13 @@ public class DOGESpotBuyerOnServer implements Job {
                 }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
-                HuobiUtil.weChatPusher(SYMBOL + " 最新收益: " + pureProfit.toString(), 2);
-
+                BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
+                if (pureProfit.compareTo(new BigDecimal("0")) > 0) {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(SYMBOL).append(" 最新收益: ").append(pureProfit).append("; ");
+                    sb.append(" 点卡余额: ").append(pointBalance.toString());
+                    HuobiUtil.weChatPusher(sb.toString(), 2);
+                }
                 orderCount.getAndSet(0);
 
                 strategyTogether.launch(usdtBalance);
@@ -195,6 +201,7 @@ public class DOGESpotBuyerOnServer implements Job {
             if (balanceChanged) { //订单成交后,更新余额
                 BigDecimal currentBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
                 usdtBalance = usdtBalance.max(currentBalance);
+                balanceChanged = false;
             }
 
             //检测是否需要下单
@@ -233,8 +240,12 @@ public class DOGESpotBuyerOnServer implements Job {
                         StrategyCommon.placeBuyOrder(spot, priceList.get(i), usdtPortion);
                     } else {
                         setInsufficientFound(true);
-                        logger.error("====== " + SYMBOL + "-SpotBuyer-priceListener: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
-
+                        ticker.getAndAdd(1);
+                        if (ticker.get() % 10 == 0) {
+                            ticker.getAndSet(1);
+                            logger.info("====== " + SYMBOL + "-SpotBuyer-priceListener: 所剩 usdt 余额不足,等待卖单成交 " + usdtBalance.toString() + " ======");
+                            usdtBalance = usdtBalance.max(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
+                        }
                     }
                 }
 
