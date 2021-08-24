@@ -41,7 +41,7 @@ public class StrategyTogether extends BaseStrategy {
 
     public synchronized void launch(BigDecimal usdtBalance) {
         StrategyCommon.reset();
-        HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
+        HuobiUtil.weChatPusher(spot.getSymbol() + " 策略启动: ", 1);
         logger.error(spot.toString());
         logger.error("====== StrategyTogether-策略启动 ======");
         logger.error("====== StrategyTogether-高频策略每次补仓份额: " + portionHigh + " USDT ======");
