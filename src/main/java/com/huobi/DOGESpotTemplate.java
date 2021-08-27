@@ -199,8 +199,7 @@ public class DOGESpotTemplate implements Job {
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
-//        priceListener();
-        System.out.println(" -- SpotTemplate.execute -- ");
+        priceListener();
     }
 
     /**
