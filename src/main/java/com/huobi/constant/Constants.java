@@ -24,8 +24,8 @@ public class Constants {
     public static final double LOW_RANGE_1 = 70;   // 50-70%   <100
 
     // 策略区间内下单次数
-    public static final double HIGH_COUNT_1 = 30;
-    public static final double MEDIUM_COUNT_1 = 4;
+    public static final double HIGH_COUNT_1 = 60; // 0.5%
+    public static final double MEDIUM_COUNT_1 = 4; // 5%
     public static final double LOW_COUNT_1 = 2;
 
     //offset 止盈点,  涨 2% 就卖掉.
@@ -41,8 +41,8 @@ public class Constants {
     public static final double LOW_RANGE_2 = 50;   // 40-50%   <100
 
     // 策略区间内下单次数
-    public static final double HIGH_COUNT_2 = 5;
-    public static final double MEDIUM_COUNT_2 = 10;
+    public static final double HIGH_COUNT_2 = 10;  //1%
+    public static final double MEDIUM_COUNT_2 = 30; //1%
     public static final double LOW_COUNT_2 = 10;
 
     //offset 止盈点,  涨 2% 就卖掉.
@@ -59,7 +59,7 @@ public class Constants {
 
     // 策略区间内下单次数
     public static final double HIGH_COUNT_3 = 4;  //5%下一次单
-    public static final double MEDIUM_COUNT_3 = 4; //10% 下一次单
+    public static final double MEDIUM_COUNT_3 = 4; //5% 下一次单
     public static final double LOW_COUNT_3 = 10;
 
     //offset 止盈点,  涨 2% 就卖掉.
