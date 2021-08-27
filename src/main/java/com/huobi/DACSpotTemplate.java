@@ -296,21 +296,21 @@ public class DACSpotTemplate implements Job {
 
             //检测是否需要下单
             ArrayList<BigDecimal> priceList = StrategyCommon.getPriceList();
-            int i = 0;
-            while (i < priceList.size() && latestPrice.compareTo(priceList.get(i)) <= 0) {
-                i++;
+            AtomicInteger i = new AtomicInteger(0);
+            while (i.get() < priceList.size() && latestPrice.compareTo(priceList.get(i.get())) <= 0) {
+                i.getAndIncrement();
             }
-            if (i + 1 >= highCount) {
+            if (i.get() >= highCount - 1) {
                 level = "medium";
-                if (i + 1 >= mediumCount) {
+                if (i.get() >= mediumCount - 1) {
                     level = "low";
                 }
                 logger.info("====== {}-SpotBuyer-当前阶段: {} ======", SYMBOL, level);
 
             }
             //之前买单全部成交后, 才考虑下单.
-            if (orderCount.get() == i + 1 && buyOrderMap.size() == 0) {
-                if (i < priceList.size()) {
+            if (orderCount.get() + 1 == i.get() && buyOrderMap.size() == 0) {
+                if (i.get() < priceList.size()) {
                     BigDecimal usdtPortion = new BigDecimal("10");
                     if (CURRENT_STRATEGY == 1) {
                         if (level.equalsIgnoreCase("high")) {
@@ -352,7 +352,7 @@ public class DACSpotTemplate implements Job {
 
                     if (usdtBalance.compareTo(usdtPortion) >= 0) {
                         setInsufficientFound(false);
-                        StrategyCommon.placeBuyOrder(spot, priceList.get(i), usdtPortion);
+                        StrategyCommon.placeBuyOrder(spot, priceList.get(i.get()), usdtPortion);
                     } else {
                         setInsufficientFound(true);
                         ticker.getAndAdd(1);
