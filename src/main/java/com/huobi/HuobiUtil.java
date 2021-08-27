@@ -54,6 +54,29 @@ public class HuobiUtil {
      * @return 返回账户余额
      */
     public static BigDecimal getBalanceByAccountId(Long accountId, String baseCurrency, String quotaCurrency) {
+        AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
+        AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
+        List<Balance> accountBalanceList = accountBalance.getList();
+        accountBalanceList.forEach(balance -> {
+            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
+                if (balance.getType().equalsIgnoreCase("trade")) {
+                    bal.set(balance.getBalance());
+                }
+            }
+        });
+        logger.info("====== HuobiUtil-getBalanceByAccountId: {}-trade:{} ======", quotaCurrency, bal.get().toString());
+        return bal.get();
+    }
+
+    /**
+     * 根据账户 ID 查询账户余额
+     *
+     * @param accountId
+     * @param baseCurrency
+     * @param quotaCurrency 交易对
+     * @return 返回账户余额
+     */
+    public static String getBalance4Push(Long accountId, String baseCurrency, String quotaCurrency) {
         StringBuilder sb = new StringBuilder();
         AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
         AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
@@ -61,17 +84,25 @@ public class HuobiUtil {
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
                 if (balance.getType().equalsIgnoreCase("trade")) {
-                    sb.append(baseCurrency).append(": ").append(balance.getBalance()).append(" -- ");
+                    sb.append(baseCurrency).append("-trade: ").append(balance.getBalance()).append("; ");
+                }
+                if (balance.getType().equalsIgnoreCase("frozen")) {
+                    sb.append(baseCurrency).append("-frozen: ").append(balance.getBalance()).append("; ");
+                }
+
+            }
+            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
+                if (balance.getType().equalsIgnoreCase("trade")) {
+                    bal.set(balance.getBalance());
+                    sb.append(quotaCurrency).append("-trade: ").append(balance.getBalance()).append("; ");
+                }
+                if (balance.getType().equalsIgnoreCase("frozen")) {
+                    sb.append(quotaCurrency).append("-frozen: ").append(balance.getBalance()).append("; ");
                 }
             }
-            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency) && balance.getType().equalsIgnoreCase("trade")) {
-                bal.set(balance.getBalance());
-                sb.append(quotaCurrency).append(": ").append(balance.getBalance());
-            }
         });
-        logger.info("====== HuobiUtil-getBalanceByAccountId: {} ======", sb.toString());
-        return bal.get();
-
+        logger.info("====== HuobiUtil-getBalance4Push: {} ======", sb.toString());
+        return sb.toString();
     }
 
     /**

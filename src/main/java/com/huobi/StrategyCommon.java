@@ -209,39 +209,4 @@ public class StrategyCommon {
     }
 
 
-    /**
-     * 定时任务
-     */
-    public static void timer(String time, Class<? extends Job> jobClass, String jobDetailsKey) {
-        try {
-            // 获取到一个StdScheduler, StdScheduler其实是QuartzScheduler的一个代理
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-
-            // 启动Scheduler
-            scheduler.start();
-            // 新建一个Job, 指定执行类是QuartzTest(需实现Job), 指定一个K/V类型的数据, 指定job的name和group
-            JobDetail job = newJob(jobClass)
-                    .usingJobData(jobDetailsKey, jobDetailsKey + "_quant")
-                    .withIdentity(jobDetailsKey + "_group", jobDetailsKey + "_timer")
-                    .build();
-            // 新建一个Trigger, 表示JobDetail的调度计划, 这里的cron表达式是 每10秒执行一次
-            CronTrigger trigger = newTrigger()
-                    .withIdentity(jobDetailsKey + "_trigger", jobDetailsKey + "_timer")
-                    .startNow()
-                    .withSchedule(cronSchedule(time))
-                    .build();
-
-
-            // 让scheduler开始调度这个job, 按trigger指定的计划
-            scheduler.scheduleJob(job, trigger);
-            // 保持进程不被销毁
-            //  scheduler.shutdown();
-            Thread.sleep(10000000);
-
-        } catch (SchedulerException | InterruptedException se) {
-            se.printStackTrace();
-        }
-    }
-
-
 }

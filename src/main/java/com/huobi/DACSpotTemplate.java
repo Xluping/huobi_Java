@@ -40,6 +40,7 @@ public class DACSpotTemplate implements Job {
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static BigDecimal usdtBalance = new BigDecimal("0");
     private static final AtomicInteger ticker = new AtomicInteger();
+    private static final EveryDayPush everyDayPush = new EveryDayPush();
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
@@ -48,7 +49,13 @@ public class DACSpotTemplate implements Job {
     public static void main(String[] args) {
         DACSpotTemplate spotBuyer = new DACSpotTemplate();
         spotBuyer.init();
-        StrategyCommon.timer("0/5 * * * * ?", DACSpotTemplate.class, SYMBOL); // 4s 执行一次
+        everyDayPush.setSpotAccountId(spotAccountId);
+        everyDayPush.setBaseCurrency(BASE_CURRENCY);
+        everyDayPush.setQuoteCurrency(QUOTE_CURRENCY);
+        JobManagement jobManagement = new JobManagement();
+        jobManagement.addJob("0/5 * * * * ?", DACSpotTemplate.class, SYMBOL);
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.startJob();
     }
 
     /**
@@ -192,7 +199,8 @@ public class DACSpotTemplate implements Job {
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
-        priceListener();
+//        priceListener();
+        System.out.println(" -- SpotTemplate.execute -- ");
     }
 
     /**

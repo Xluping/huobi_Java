@@ -48,15 +48,24 @@ public class HuobiUtilTest {
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
                 if (balance.getType().equalsIgnoreCase("trade")) {
-                    sb.append(baseCurrency).append(": ").append(balance.getBalance()).append(" -- ");
+                    sb.append(baseCurrency).append("-trade: ").append(balance.getBalance()).append("; ");
+                }
+                if (balance.getType().equalsIgnoreCase("frozen")) {
+                    sb.append(baseCurrency).append("-frozen: ").append(balance.getBalance()).append("; ");
+                }
+
+            }
+            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
+                if (balance.getType().equalsIgnoreCase("trade")) {
+                    bal.set(balance.getBalance());
+                    sb.append(quotaCurrency).append("-trade: ").append(balance.getBalance()).append("; ");
+                }
+                if (balance.getType().equalsIgnoreCase("frozen")) {
+                    sb.append(quotaCurrency).append("-frozen: ").append(balance.getBalance()).append("; ");
                 }
             }
-            if (balance.getCurrency().equalsIgnoreCase(quotaCurrency) && balance.getType().equalsIgnoreCase("trade")) {
-                bal.set(balance.getBalance());
-                sb.append(quotaCurrency).append(": ").append(balance.getBalance());
-            }
         });
-        logger.info("====== HuobiUtil-getBalanceByAccountId: " + sb.toString() + "======");
+        logger.info("====== HuobiUtil-getBalance4Push: {} ======", sb.toString());
     }
 
     @Test
