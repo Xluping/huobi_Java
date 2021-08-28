@@ -41,7 +41,7 @@ public class HuobiUtil {
                 accountId = account.getId();
             }
         });
-        logger.info("====== HuobiUtil-getAccountIdByType: accountId= {} ======", accountId);
+        logger.info("====== HuobiUtil-getAccountIdByType: {} accountId= {} ======", type, accountId);
         return accountId > 0 ? accountId : -1;
     }
 

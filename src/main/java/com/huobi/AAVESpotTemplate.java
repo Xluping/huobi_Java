@@ -5,6 +5,7 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
+import com.huobi.push.AAVEEveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -40,7 +41,6 @@ public class AAVESpotTemplate implements Job {
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static BigDecimal usdtBalance = new BigDecimal("0");
     private static final AtomicInteger ticker = new AtomicInteger();
-    private static final EveryDayPush everyDayPush = new EveryDayPush();
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
@@ -49,12 +49,9 @@ public class AAVESpotTemplate implements Job {
     public static void main(String[] args) {
         AAVESpotTemplate spotBuyer = new AAVESpotTemplate();
         spotBuyer.init();
-        everyDayPush.setSpotAccountId(spotAccountId);
-        everyDayPush.setBaseCurrency(BASE_CURRENCY);
-        everyDayPush.setQuoteCurrency(QUOTE_CURRENCY);
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", AAVESpotTemplate.class, SYMBOL);
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", AAVEEveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 

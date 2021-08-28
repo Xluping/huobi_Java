@@ -5,6 +5,7 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
+import com.huobi.push.DACEveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -40,7 +41,6 @@ public class DACSpotTemplate implements Job {
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static BigDecimal usdtBalance = new BigDecimal("0");
     private static final AtomicInteger ticker = new AtomicInteger();
-    private static final EveryDayPush everyDayPush = new EveryDayPush();
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
@@ -49,12 +49,9 @@ public class DACSpotTemplate implements Job {
     public static void main(String[] args) {
         DACSpotTemplate spotBuyer = new DACSpotTemplate();
         spotBuyer.init();
-        everyDayPush.setSpotAccountId(spotAccountId);
-        everyDayPush.setBaseCurrency(BASE_CURRENCY);
-        everyDayPush.setQuoteCurrency(QUOTE_CURRENCY);
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", DACSpotTemplate.class, SYMBOL);
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", DACEveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 
