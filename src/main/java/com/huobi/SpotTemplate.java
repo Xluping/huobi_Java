@@ -40,7 +40,6 @@ public class SpotTemplate implements Job {
     private final AtomicInteger orderCount = new AtomicInteger(0);
     private static BigDecimal usdtBalance = new BigDecimal("0");
     private static final AtomicInteger ticker = new AtomicInteger();
-    private static final EveryDayPush everyDayPush = new EveryDayPush();
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
@@ -49,9 +48,6 @@ public class SpotTemplate implements Job {
     public static void main(String[] args) {
         SpotTemplate spotBuyer = new SpotTemplate();
         spotBuyer.init();
-        everyDayPush.setSpotAccountId(spotAccountId);
-        everyDayPush.setBaseCurrency(BASE_CURRENCY);
-        everyDayPush.setQuoteCurrency(QUOTE_CURRENCY);
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", SpotTemplate.class, SYMBOL);
         jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
