@@ -128,9 +128,9 @@
                 <version>2.6</version>
                 <executions>
                     <execution>
-                        <id>ht</id>
+                        <id>m1</id>
                         <configuration>
-                            <finalName>ht</finalName>
+                            <finalName>m1</finalName>
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
@@ -147,9 +147,9 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>ont</id>
+                        <id>m2</id>
                         <configuration>
-                            <finalName>ont</finalName>
+                            <finalName>m2</finalName>
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
@@ -166,9 +166,9 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>aave</id>
+                        <id>m3</id>
                         <configuration>
-                            <finalName>aave</finalName>
+                            <finalName>m3</finalName>
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
@@ -185,9 +185,9 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>doge</id>
+                        <id>m4</id>
                         <configuration>
-                            <finalName>doge</finalName>
+                            <finalName>m4</finalName>
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
@@ -204,9 +204,9 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>dac</id>
+                        <id>m5</id>
                         <configuration>
-                            <finalName>dac</finalName>
+                            <finalName>m5</finalName>
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
