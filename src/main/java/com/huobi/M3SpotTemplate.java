@@ -5,7 +5,6 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
-import com.huobi.push.AAVEEveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -30,7 +29,7 @@ public class M3SpotTemplate implements Job {
     private static final String BASE_CURRENCY = "aave";
     private static final String QUOTE_CURRENCY = "usdt";
     private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
-    private static String PORTION = "2000";
+    private static String PORTION = "3000";
     private static final int CURRENT_STRATEGY = 1;
 
     private static volatile boolean insufficientFound = true;
@@ -58,7 +57,7 @@ public class M3SpotTemplate implements Job {
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", M3SpotTemplate.class, SYMBOL);
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", AAVEEveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 
@@ -101,35 +100,15 @@ public class M3SpotTemplate implements Job {
         usdtBalance = usdtBalance.add(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
         logger.error(" {} -prepareSpot: 分配到的仓位: {} ======", SYMBOL, PORTION);
         spot.setTotalBalance(totalBalance);
-        BigDecimal highBalance = null;
-        BigDecimal mediumBalance = null;
-        BigDecimal lowBalance = null;
-        BigDecimal portionHigh = null;
-        BigDecimal portionMedium = null;
-        BigDecimal portionLow = null;
-
+        BigDecimal highBalance;
+        BigDecimal mediumBalance;
+        BigDecimal lowBalance;
+        BigDecimal portionHigh;
+        BigDecimal portionMedium;
+        BigDecimal portionLow;
+        //2. 稳健 3.保守
         switch (CURRENT_STRATEGY) {
-            case 1: //高频
-                highBalance = totalBalance.multiply(new BigDecimal(Constants.HIGH_RATIO_1.toString()));
-                highBalance = highBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-                mediumBalance = totalBalance.multiply(new BigDecimal(Constants.MEDIUM_RATIO_1.toString()));
-                mediumBalance = mediumBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-                lowBalance = totalBalance.multiply(new BigDecimal(Constants.LOW_RATIO_1.toString()));
-                lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-
-                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_1)), RoundingMode.HALF_UP);
-                portionHigh = portionHigh.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-
-                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_1)), RoundingMode.HALF_UP);
-                portionMedium = portionMedium.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-
-                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_1)), RoundingMode.HALF_UP);
-                portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-                highCount = Constants.HIGH_COUNT_1;
-                mediumCount = Constants.MEDIUM_COUNT_1;
-
-                break;
-            case 2: //稳健
+            case 2:
                 highBalance = totalBalance.multiply(new BigDecimal(Constants.HIGH_RATIO_2.toString()));
                 highBalance = highBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
                 mediumBalance = totalBalance.multiply(new BigDecimal(Constants.MEDIUM_RATIO_2.toString()));
@@ -149,7 +128,7 @@ public class M3SpotTemplate implements Job {
                 mediumCount = Constants.MEDIUM_COUNT_2;
 
                 break;
-            case 3: //保守
+            case 3:
                 highBalance = totalBalance.multiply(new BigDecimal(Constants.HIGH_RATIO_3.toString()));
                 highBalance = highBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
                 mediumBalance = totalBalance.multiply(new BigDecimal(Constants.MEDIUM_RATIO_3.toString()));
@@ -167,6 +146,26 @@ public class M3SpotTemplate implements Job {
                 portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_3;
                 mediumCount = Constants.MEDIUM_COUNT_3;
+                break;
+            default:  //高频
+                highBalance = totalBalance.multiply(new BigDecimal(Constants.HIGH_RATIO_1.toString()));
+                highBalance = highBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                mediumBalance = totalBalance.multiply(new BigDecimal(Constants.MEDIUM_RATIO_1.toString()));
+                mediumBalance = mediumBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                lowBalance = totalBalance.multiply(new BigDecimal(Constants.LOW_RATIO_1.toString()));
+                lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_1)), RoundingMode.HALF_UP);
+                portionHigh = portionHigh.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_1)), RoundingMode.HALF_UP);
+                portionMedium = portionMedium.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_1)), RoundingMode.HALF_UP);
+                portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                highCount = Constants.HIGH_COUNT_1;
+                mediumCount = Constants.MEDIUM_COUNT_1;
+
                 break;
         }
         spot.setHighStrategyBalance(highBalance);
@@ -224,7 +223,7 @@ public class M3SpotTemplate implements Job {
                 Order buyOrder = HuobiUtil.getOrderByClientId(clientId);
                 BigDecimal buyPrice = buyOrder.getPrice();
                 BigDecimal buyAmount = buyOrder.getAmount();
-                if (buyOrder.getState().trim().equalsIgnoreCase("filled")) {
+                if ("filled".equalsIgnoreCase(buyOrder.getState().trim())) {
                     balanceChanged = true;
 
                     logger.error("====== {}-SpotBuyer-买单已成交 : {} ======", SYMBOL, buyOrder.toString());
@@ -234,7 +233,7 @@ public class M3SpotTemplate implements Job {
                     StrategyCommon.placeSellOrder(CURRENT_STRATEGY, spot, new BigDecimal(String.valueOf(buyOrder.getPrice())), buyAmount);
                     orderCount.getAndIncrement();
                     buyIterator.remove();
-                } else if (buyOrder.getState().trim().equalsIgnoreCase("canceled")) {
+                } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
                     logger.error("====== {}-SpotBuyer-买单已取消 : {} ======", SYMBOL, buyOrder.toString());
                     orderCount.getAndDecrement();
                     buyIterator.remove();
@@ -246,7 +245,7 @@ public class M3SpotTemplate implements Job {
                 Long orderId = entry.getKey();
                 Order sellOrder = HuobiUtil.getOrderByOrderId(orderId);
 
-                if (sellOrder.getState().trim().equalsIgnoreCase("filled")) {
+                if ("filled".equalsIgnoreCase(sellOrder.getState().trim())) {
                     balanceChanged = true;
 
                     logger.error("====== {}-SpotBuyer-卖单已成交 : {} ======", SYMBOL, sellOrder.toString());
@@ -258,7 +257,7 @@ public class M3SpotTemplate implements Job {
                     StrategyCommon.setFee(sellOrder.getFilledFees());
                     orderCount.getAndDecrement();
                     sellIterator.remove();
-                } else if (sellOrder.getState().trim().equalsIgnoreCase("canceled")) {
+                } else if ("canceled".equalsIgnoreCase(sellOrder.getState().trim())) {
                     logger.error("====== {}-SpotBuyer-卖单已取消 : {} ======", SYMBOL, sellOrder.toString());
                     sellIterator.remove();
                 }
@@ -282,10 +281,9 @@ public class M3SpotTemplate implements Job {
                 BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
                 if (pureProfit.compareTo(new BigDecimal("0")) > 0) {
 
-                    StringBuilder sb = new StringBuilder();
-                    sb.append(SYMBOL).append(" 最新收益: ").append(pureProfit).append("; ");
-                    sb.append(" 点卡余额: ").append(pointBalance.toString());
-                    HuobiUtil.weChatPusher(sb.toString(), 2);
+                    String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
+                            " 点卡余额: " + pointBalance.toString();
+                    HuobiUtil.weChatPusher(sb, 2);
                 }
                 orderCount.getAndSet(0);
 
@@ -317,37 +315,37 @@ public class M3SpotTemplate implements Job {
                 if (i.get() < priceList.size()) {
                     BigDecimal usdtPortion = new BigDecimal("10");
                     if (CURRENT_STRATEGY == 1) {
-                        if (level.equalsIgnoreCase("high")) {
+                        if ("high".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_1), RoundingMode.HALF_UP);
 
-                        } else if (level.equalsIgnoreCase("medium")) {
+                        } else if ("medium".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_1), RoundingMode.HALF_UP);
 
-                        } else if (level.equalsIgnoreCase("low")) {
+                        } else if ("low".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_1), RoundingMode.HALF_UP);
 
                         }
                     }
                     if (CURRENT_STRATEGY == 2) {
-                        if (level.equalsIgnoreCase("high")) {
+                        if ("high".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_2), RoundingMode.HALF_UP);
 
-                        } else if (level.equalsIgnoreCase("medium")) {
+                        } else if ("medium".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_2), RoundingMode.HALF_UP);
 
-                        } else if (level.equalsIgnoreCase("low")) {
+                        } else if ("low".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_2), RoundingMode.HALF_UP);
 
                         }
                     }
                     if (CURRENT_STRATEGY == 3) {
-                        if (level.equalsIgnoreCase("high")) {
+                        if ("high".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_3), RoundingMode.HALF_UP);
 
-                        } else if (level.equalsIgnoreCase("medium")) {
+                        } else if ("medium".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_3), RoundingMode.HALF_UP);
 
-                        } else if (level.equalsIgnoreCase("low")) {
+                        } else if ("low".equalsIgnoreCase(level)) {
                             usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_3), RoundingMode.HALF_UP);
 
                         }
