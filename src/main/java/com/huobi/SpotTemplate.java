@@ -43,10 +43,16 @@ public class SpotTemplate implements Job {
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
-    private final Logger logger = LoggerFactory.getLogger(SpotTemplate.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpotTemplate.class);
 
     public static void main(String[] args) {
         PORTION = args[0];
+        if (PORTION == null || PORTION.isEmpty()) {
+            PORTION = "3000";
+            logger.info("====== {}-main: PORTION == null || PORTION.isEmpty() set PORTION = {} ======", SYMBOL, PORTION);
+        }
+        logger.info("====== {}-main:  PORTION = {} ======", SYMBOL, PORTION);
+
         SpotTemplate spotBuyer = new SpotTemplate();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
