@@ -5,6 +5,7 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
+import com.huobi.push.EveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -58,6 +59,7 @@ public class SpotTemplate implements Job {
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", SpotTemplate.class, SYMBOL);
+        // TODO xlp 9/5/21 5:56 AM  : 创建新币种启动类后, 创建 EveryDayPush
         jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }

@@ -11,12 +11,12 @@ import org.quartz.JobExecutionException;
  * @author: Luping
  * @create: 8/27/21 10:42 PM
  */
-public class ONTEveryDayPush implements Job {
+public class M3EveryDayPush implements Job {
     private Long spotAccountId = 14086863L;
-    private String baseCurrency = "ont";
+    private String baseCurrency = "aave";
     private String quoteCurrency = "usdt";
 
-    public ONTEveryDayPush() {
+    public M3EveryDayPush() {
     }
 
 

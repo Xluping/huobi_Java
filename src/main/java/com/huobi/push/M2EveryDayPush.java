@@ -1,5 +1,6 @@
-package com.huobi;
+package com.huobi.push;
 
+import com.huobi.HuobiUtil;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -10,12 +11,12 @@ import org.quartz.JobExecutionException;
  * @author: Luping
  * @create: 8/27/21 10:42 PM
  */
-public class EveryDayPush implements Job {
+public class M2EveryDayPush implements Job {
     private Long spotAccountId = 14086863L;
-    private String baseCurrency = "ht";
+    private String baseCurrency = "ltc";
     private String quoteCurrency = "usdt";
 
-    public EveryDayPush() {
+    public M2EveryDayPush() {
     }
 
 

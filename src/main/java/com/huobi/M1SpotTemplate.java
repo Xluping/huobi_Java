@@ -5,6 +5,8 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
+import com.huobi.push.EveryDayPush;
+import com.huobi.push.M1EveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -58,7 +60,7 @@ public class M1SpotTemplate implements Job {
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", M1SpotTemplate.class, SYMBOL);
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", M1EveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 
