@@ -44,10 +44,16 @@ public class M3SpotTemplate implements Job {
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
-    private final Logger logger = LoggerFactory.getLogger(M3SpotTemplate.class);
+    private static final Logger logger = LoggerFactory.getLogger(M3SpotTemplate.class);
 
     public static void main(String[] args) {
         PORTION = args[0];
+        if (PORTION == null || PORTION.isEmpty()) {
+            PORTION = "3000";
+            logger.info("====== {}-main: PORTION == null || PORTION.isEmpty() set PORTION = {} ======", SYMBOL, PORTION);
+        }
+        logger.info("====== {}-main:  PORTION = {} ======", SYMBOL, PORTION);
+
         M3SpotTemplate spotBuyer = new M3SpotTemplate();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
