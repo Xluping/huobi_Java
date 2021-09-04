@@ -142,12 +142,17 @@ public class HuobiUtil {
             Long[] topics = null;
             params.put("appToken", Constants.WX_PUSHER_TOKEN);
             params.put("content", msg);
-            if (type == 1) topics = new Long[]{1775L};
-            if (type == 2) topics = new Long[]{1776L};
+            if (type == 1) {
+                topics = new Long[]{1775L};
+            } else if (type == 2) {
+                topics = new Long[]{1776L};
+            }
             params.put("topicIds", topics);
 
             String body = HbdmHttpClient.getInstance().doPost2WX(Constants.WX_PUSHER_URL, params);
-            if (body.contains("处理成功")) logger.error("=== HuobiUtil-weChatPusher 推送成功: {} ======", msg);
+            if (body.contains("处理成功")) {
+                logger.error("=== HuobiUtil-weChatPusher 推送成功: {} ======", msg);
+            }
         } catch (Exception e) {
             logger.error("=== HuobiUtil-weChatPusher: 无法推送消息 ======");
             e.printStackTrace();
