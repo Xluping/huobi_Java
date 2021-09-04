@@ -204,6 +204,25 @@
                             <goal>single</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>m5</id>
+                        <configuration>
+                            <finalName>m5</finalName>
+                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.huobi.M5SpotTemplate</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
 
                 </executions>
             </plugin>
