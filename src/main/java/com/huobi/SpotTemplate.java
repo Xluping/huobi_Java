@@ -29,7 +29,7 @@ public class SpotTemplate implements Job {
     private static final String BASE_CURRENCY = "ht";
     private static final String QUOTE_CURRENCY = "usdt";
     private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
-    private static final String PORTION = "2000";
+    private static String PORTION = "2000";
     private static final int CURRENT_STRATEGY = 1;
 
     private static volatile boolean insufficientFound = true;
@@ -46,6 +46,7 @@ public class SpotTemplate implements Job {
     private final Logger logger = LoggerFactory.getLogger(SpotTemplate.class);
 
     public static void main(String[] args) {
+        PORTION = args[0];
         SpotTemplate spotBuyer = new SpotTemplate();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();

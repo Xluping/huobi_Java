@@ -134,7 +134,7 @@
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.HTSpotTemplate</mainClass>
+                                    <mainClass>com.huobi.M1SpotTemplate</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -153,7 +153,7 @@
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.ONTSpotTemplate</mainClass>
+                                    <mainClass>com.huobi.M2SpotTemplate</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -172,7 +172,7 @@
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.AAVESpotTemplate</mainClass>
+                                    <mainClass>com.huobi.M3SpotTemplate</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -184,6 +184,7 @@
                             <goal>single</goal>
                         </goals>
                     </execution>
+
                     <execution>
                         <id>m4</id>
                         <configuration>
@@ -191,26 +192,7 @@
                             <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.DOGESpotTemplate</mainClass>
-                                </manifest>
-                            </archive>
-                            <descriptorRefs>
-                                <descriptorRef>jar-with-dependencies</descriptorRef>
-                            </descriptorRefs>
-                        </configuration>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>m5</id>
-                        <configuration>
-                            <finalName>m5</finalName>
-                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
-                            <archive>
-                                <manifest>
-                                    <mainClass>com.huobi.DACSpotTemplate</mainClass>
+                                    <mainClass>com.huobi.M4SpotTemplate</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
