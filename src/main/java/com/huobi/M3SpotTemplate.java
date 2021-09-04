@@ -5,7 +5,7 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
-import com.huobi.push.ONTEveryDayPush;
+import com.huobi.push.AAVEEveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -26,11 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Luping
  * @create: 8/24/21 9:12 PM
  */
-public class ONTSpotTemplate implements Job {
-    private static final String BASE_CURRENCY = "ont";
+public class M3SpotTemplate implements Job {
+    private static final String BASE_CURRENCY = "aave";
     private static final String QUOTE_CURRENCY = "usdt";
     private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
-    private static final String PORTION = "2000";
+    private static String PORTION = "2000";
     private static final int CURRENT_STRATEGY = 1;
 
     private static volatile boolean insufficientFound = true;
@@ -44,14 +44,15 @@ public class ONTSpotTemplate implements Job {
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
-    private final Logger logger = LoggerFactory.getLogger(ONTSpotTemplate.class);
+    private final Logger logger = LoggerFactory.getLogger(M3SpotTemplate.class);
 
     public static void main(String[] args) {
-        ONTSpotTemplate spotBuyer = new ONTSpotTemplate();
+        PORTION = args[0];
+        M3SpotTemplate spotBuyer = new M3SpotTemplate();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
-        jobManagement.addJob("0/5 * * * * ?", ONTSpotTemplate.class, SYMBOL);
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", ONTEveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.addJob("0/5 * * * * ?", M3SpotTemplate.class, SYMBOL);
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", AAVEEveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 

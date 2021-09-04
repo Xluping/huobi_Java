@@ -5,7 +5,7 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
-import com.huobi.push.DOGEEveryDayPush;
+import com.huobi.push.HTEveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -26,11 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author: Luping
  * @create: 8/24/21 9:12 PM
  */
-public class DOGESpotTemplate implements Job {
-    private static final String BASE_CURRENCY = "doge";
+public class M1SpotTemplate implements Job {
+    private static final String BASE_CURRENCY = "ht";
     private static final String QUOTE_CURRENCY = "usdt";
     private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
-    private static final String PORTION = "2000";
+    private static String PORTION = "2000";
     private static final int CURRENT_STRATEGY = 1;
 
     private static volatile boolean insufficientFound = true;
@@ -44,14 +44,15 @@ public class DOGESpotTemplate implements Job {
     private static double highCount = 0;
     private static double mediumCount = 0;
     private String level = "high";
-    private final Logger logger = LoggerFactory.getLogger(DOGESpotTemplate.class);
+    private final Logger logger = LoggerFactory.getLogger(M1SpotTemplate.class);
 
     public static void main(String[] args) {
-        DOGESpotTemplate spotBuyer = new DOGESpotTemplate();
+        PORTION = args[0];
+        M1SpotTemplate spotBuyer = new M1SpotTemplate();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
-        jobManagement.addJob("0/5 * * * * ?", DOGESpotTemplate.class, SYMBOL);
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", DOGEEveryDayPush.class, SYMBOL + "-PUSH");
+        jobManagement.addJob("0/5 * * * * ?", M1SpotTemplate.class, SYMBOL);
+        jobManagement.addJob("0 0 8,12,19,22 * * ?", HTEveryDayPush.class, SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 
