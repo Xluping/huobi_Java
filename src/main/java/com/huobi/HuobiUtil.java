@@ -64,7 +64,7 @@ public class HuobiUtil {
                 }
             }
         });
-        logger.info("====== HuobiUtil-getBalanceByAccountId: {}-trade:{} ======", quotaCurrency, bal.get().toString());
+        logger.info("====== HuobiUtil-getBalanceByAccountId: {}-trade(账户可用余额): {} ======", quotaCurrency, bal.get().toString());
         return bal.get();
     }
 
