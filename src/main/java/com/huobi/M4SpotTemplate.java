@@ -203,7 +203,7 @@ public class M4SpotTemplate implements Job {
         usdtBalance = usdtBalance.max(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
-            StrategyCommon.placeBuyOrder(spot, currentTradPrice, spot.getPortionHigh());
+            StrategyCommon.buyMarket(spot, currentTradPrice, spot.getPortionHigh());
         } else {
             logger.error("{}-startup: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, usdtBalance.toString());
         }
@@ -229,17 +229,40 @@ public class M4SpotTemplate implements Job {
             while (buyIterator.hasNext()) {
                 Map.Entry<String, BigDecimal> entry = buyIterator.next();
                 String clientId = entry.getKey();
-                Order buyOrder = HuobiUtil.getOrderByClientId(clientId);
-                BigDecimal buyPrice = buyOrder.getPrice();
-                BigDecimal buyAmount = buyOrder.getAmount();
+                Order buyOrder;
+                boolean isLimit = true;
+                BigDecimal buyPrice = new BigDecimal("0");
+                if (clientId.contains(spot.getSymbol())) {
+                    //buy limit
+                    buyOrder = HuobiUtil.getOrderByClientId(clientId);
+                    buyPrice = buyOrder.getPrice();
+                } else {
+                    //buy market
+                    isLimit = false;
+                    buyOrder = HuobiUtil.getOrderByOrderId(Long.parseLong(clientId));
+                    buyPrice = latestPrice;
+                }
+
                 if ("filled".equalsIgnoreCase(buyOrder.getState().trim())) {
                     balanceChanged = true;
-
                     logger.error("====== {}-SpotBuyer-买单已成交 : {} ======", SYMBOL, buyOrder.toString());
-                    BigDecimal cost = buyAmount.multiply(buyPrice);
-                    StrategyCommon.setFee(cost);
+                    BigDecimal buyAmount = buyOrder.getFilledAmount();
+
                     StrategyCommon.setFee(buyOrder.getFilledFees());
-                    StrategyCommon.placeSellOrder(CURRENT_STRATEGY, spot, new BigDecimal(String.valueOf(buyOrder.getPrice())), buyAmount);
+                    if (isLimit) {
+                        BigDecimal cost = buyAmount.multiply(buyPrice);
+                        StrategyCommon.setFee(cost);
+                        BigDecimal buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
+                        buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                        StrategyCommon.sellLimit(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount);
+                    } else {
+                        // buy market , amount is usdt;
+                        BigDecimal cost = buyOrder.getAmount();
+                        StrategyCommon.setFee(cost);
+                        BigDecimal buyAtPrice = latestPrice;
+                        buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                        StrategyCommon.sellLimit(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount);
+                    }
                     orderCount.getAndIncrement();
                     buyIterator.remove();
                 } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
@@ -363,7 +386,7 @@ public class M4SpotTemplate implements Job {
 
                     if (usdtBalance.compareTo(usdtPortion) >= 0) {
                         setInsufficientFound(false);
-                        StrategyCommon.placeBuyOrder(spot, priceList.get(i.get()), usdtPortion);
+                        StrategyCommon.buyLimit(spot, priceList.get(i.get()), usdtPortion);
                     } else {
                         setInsufficientFound(true);
                         ticker.getAndAdd(1);
