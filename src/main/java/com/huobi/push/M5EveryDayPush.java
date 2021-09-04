@@ -11,12 +11,12 @@ import org.quartz.JobExecutionException;
  * @author: Luping
  * @create: 8/27/21 10:42 PM
  */
-public class AAVEEveryDayPush implements Job {
+public class M5EveryDayPush implements Job {
     private Long spotAccountId = 14086863L;
-    private String baseCurrency = "aave";
+    private String baseCurrency = "rvn";
     private String quoteCurrency = "usdt";
 
-    public AAVEEveryDayPush() {
+    public M5EveryDayPush() {
     }
 
 
