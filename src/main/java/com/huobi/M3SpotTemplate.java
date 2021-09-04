@@ -29,7 +29,7 @@ public class M3SpotTemplate implements Job {
     private static final String BASE_CURRENCY = "aave";
     private static final String QUOTE_CURRENCY = "usdt";
     private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
-    private static String PORTION = "3000";
+    private static String PORTION = "2000";
     private static final int CURRENT_STRATEGY = 1;
 
     private static volatile boolean insufficientFound = true;
@@ -42,6 +42,7 @@ public class M3SpotTemplate implements Job {
     private static final AtomicInteger ticker = new AtomicInteger();
     private static double highCount = 0;
     private static double mediumCount = 0;
+    private static double lowCount = 0;
     private String level = "high";
     private static final Logger logger = LoggerFactory.getLogger(M3SpotTemplate.class);
 
@@ -49,9 +50,9 @@ public class M3SpotTemplate implements Job {
         PORTION = args[0];
         if (PORTION == null || PORTION.isEmpty()) {
             PORTION = "3000";
-            logger.info("====== {}-main: PORTION == null || PORTION.isEmpty() set PORTION = {} ======", SYMBOL, PORTION);
+            logger.error("====== {}-main: PORTION == null || PORTION.isEmpty() set PORTION = {} ======", SYMBOL, PORTION);
         }
-        logger.info("====== {}-main:  PORTION = {} ======", SYMBOL, PORTION);
+        logger.error("====== {}-main:  PORTION = {} ======", SYMBOL, PORTION);
 
         M3SpotTemplate spotBuyer = new M3SpotTemplate();
         spotBuyer.init();
@@ -126,6 +127,7 @@ public class M3SpotTemplate implements Job {
                 portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_2;
                 mediumCount = Constants.MEDIUM_COUNT_2;
+                lowCount = Constants.LOW_COUNT_2;
 
                 break;
             case 3:
@@ -146,6 +148,8 @@ public class M3SpotTemplate implements Job {
                 portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_3;
                 mediumCount = Constants.MEDIUM_COUNT_3;
+                lowCount = Constants.LOW_COUNT_3;
+
                 break;
             default:  //高频
                 highBalance = totalBalance.multiply(new BigDecimal(Constants.HIGH_RATIO_1.toString()));
@@ -165,6 +169,7 @@ public class M3SpotTemplate implements Job {
                 portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_1;
                 mediumCount = Constants.MEDIUM_COUNT_1;
+                lowCount = Constants.LOW_COUNT_1;
 
                 break;
         }
@@ -179,8 +184,12 @@ public class M3SpotTemplate implements Job {
         logger.error(SYMBOL + "-SpotBuyer-分配到-M-的仓位: {}-{}", mediumBalance, spot.getQuoteCurrency());
         logger.error(SYMBOL + "-SpotBuyer-分配到-L-的仓位: {}-{}", lowBalance, spot.getQuoteCurrency());
         logger.error(SYMBOL + "-SpotBuyer-H 每次补仓份额: {}-{}", portionHigh, spot.getQuoteCurrency());
+        logger.error(SYMBOL + "-SpotBuyer-H 补仓次数: {}", highCount);
         logger.error(SYMBOL + "-SpotBuyer-M 每次补仓份额: {}-{}", portionMedium, spot.getQuoteCurrency());
+        logger.error(SYMBOL + "-SpotBuyer-M 补仓次数: {}", mediumCount);
         logger.error(SYMBOL + "-SpotBuyer-L 每次补仓份额: {}-{}", portionLow, spot.getQuoteCurrency());
+        logger.error(SYMBOL + "-SpotBuyer-L 补仓次数: {}", lowCount);
+
         logger.info("====== SpotTemplate-prepareSpot: {}-{}", spot.toString(), spot.getQuoteCurrency());
 
     }
