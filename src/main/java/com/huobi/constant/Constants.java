@@ -25,15 +25,15 @@ public class Constants {
 
     // 策略区间内下单次数
     public static final double HIGH_COUNT_1 = 60; // 0.5%
-    public static final double MEDIUM_COUNT_1 = 10; // 2%
+    public static final double MEDIUM_COUNT_1 = 20; // 1%
     public static final double LOW_COUNT_1 = 5; // 4%
 
     //offset 止盈点,  涨 2% 就卖掉.
     public static final BigDecimal SELL_OFFSET_1 = new BigDecimal("1.02");
     ///////////////////////////////////////////////////////////
     /////////////////////////稳健//////////////////////////////////
-    public static final Double HIGH_RATIO_2 = 0.3;
-    public static final Double MEDIUM_RATIO_2 = 0.6;
+    public static final Double HIGH_RATIO_2 = 0.6;
+    public static final Double MEDIUM_RATIO_2 = 0.3;
     public static final Double LOW_RATIO_2 = 0.1;
     //策略区间
     public static final double HIGH_RANGE_2 = 10;   // 0-10%
@@ -46,12 +46,12 @@ public class Constants {
     public static final double LOW_COUNT_2 = 6;    //5%
 
     //offset 止盈点,  涨 2% 就卖掉.
-    public static final BigDecimal SELL_OFFSET_2 = new BigDecimal("1.10");
+    public static final BigDecimal SELL_OFFSET_2 = new BigDecimal("1.05");
     ///////////////////////////////////////////////////////////
     /////////////////////////保守//////////////////////////////////
-    public static final Double HIGH_RATIO_3 = 0.3;
+    public static final Double HIGH_RATIO_3 = 0.6;
     public static final Double MEDIUM_RATIO_3 = 0.3;
-    public static final Double LOW_RATIO_3 = 0.4;
+    public static final Double LOW_RATIO_3 = 0.1;
     //策略区间
     public static final double HIGH_RANGE_3 = 20;   // 0-20%
     public static final double MEDIUM_RANGE_3 = 40; // 20-40%
@@ -63,7 +63,7 @@ public class Constants {
     public static final double LOW_COUNT_3 = 5;   //8% 下一次单
 
     //offset 止盈点,  涨 2% 就卖掉.
-    public static final BigDecimal SELL_OFFSET_3 = new BigDecimal("1.2");
+    public static final BigDecimal SELL_OFFSET_3 = new BigDecimal("1.1");
     ///////////////////////////////////////////////////////////
 
 }
