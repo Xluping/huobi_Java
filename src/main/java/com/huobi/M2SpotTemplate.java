@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @create: 8/24/21 9:12 PM
  */
 public class M2SpotTemplate implements Job {
-    private static final String BASE_CURRENCY = "ltc";
+    private static final String BASE_CURRENCY = "akro";
     private static final String QUOTE_CURRENCY = "usdt";
     private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
     private static String PORTION = "2000";
@@ -197,12 +197,11 @@ public class M2SpotTemplate implements Job {
     }
 
     public void launch() {
-        StrategyCommon.reset();
         HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
         logger.error(SYMBOL + "-startUp price: {} ======", currentTradPrice);
         StrategyCommon.calculateBuyPriceList(CURRENT_STRATEGY, currentTradPrice, spot.getPricePrecision());
-        usdtBalance = usdtBalance.max(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
+        usdtBalance = usdtBalance.min(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buyMarket(spot, currentTradPrice, spot.getPortionHigh());

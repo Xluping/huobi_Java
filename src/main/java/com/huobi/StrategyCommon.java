@@ -229,10 +229,5 @@ public class StrategyCommon {
         return fee;
     }
 
-    public static void reset() {
-        profit = new BigDecimal("0");
-        fee = new BigDecimal("0");
-    }
-
 
 }

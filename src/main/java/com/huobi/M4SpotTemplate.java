@@ -197,12 +197,11 @@ public class M4SpotTemplate implements Job {
     }
 
     public void launch() {
-        StrategyCommon.reset();
         HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
         logger.error(SYMBOL + "-startUp price: {} ======", currentTradPrice);
         StrategyCommon.calculateBuyPriceList(CURRENT_STRATEGY, currentTradPrice, spot.getPricePrecision());
-        usdtBalance = usdtBalance.max(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
+        usdtBalance = usdtBalance.min(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buyMarket(spot, currentTradPrice, spot.getPortionHigh());
