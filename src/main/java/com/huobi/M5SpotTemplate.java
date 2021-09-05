@@ -196,7 +196,8 @@ public class M5SpotTemplate implements Job {
     }
 
     public void launch() {
-        HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
+        //        HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
+        logger.error("====== {}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, spot);
         BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
         logger.error(SYMBOL + "-startUp price: {} ======", currentTradPrice);
         StrategyCommon.calculateBuyPriceList(CURRENT_STRATEGY, currentTradPrice, spot.getPricePrecision());
