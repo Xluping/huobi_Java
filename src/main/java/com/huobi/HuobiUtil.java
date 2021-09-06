@@ -84,20 +84,20 @@ public class HuobiUtil {
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
                 if (balance.getType().equalsIgnoreCase("trade")) {
-                    sb.append(baseCurrency).append("-trade: ").append(balance.getBalance()).append("; ");
+                    sb.append(baseCurrency).append("-trade: ").append(balance.getBalance()).append("; \n");
                 }
                 if (balance.getType().equalsIgnoreCase("frozen")) {
-                    sb.append(baseCurrency).append("-frozen: ").append(balance.getBalance()).append("; ");
+                    sb.append(baseCurrency).append("-frozen: ").append(balance.getBalance()).append("; \n");
                 }
 
             }
             if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
                 if (balance.getType().equalsIgnoreCase("trade")) {
                     bal.set(balance.getBalance());
-                    sb.append(quotaCurrency).append("-trade: ").append(balance.getBalance()).append("; ");
+                    sb.append(quotaCurrency).append("-trade: ").append(balance.getBalance()).append("; \n");
                 }
                 if (balance.getType().equalsIgnoreCase("frozen")) {
-                    sb.append(quotaCurrency).append("-frozen: ").append(balance.getBalance()).append("; ");
+                    sb.append(quotaCurrency).append("-frozen: ").append(balance.getBalance()).append("; \n");
                 }
             }
         });
