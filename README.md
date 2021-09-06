@@ -35,7 +35,20 @@
  
  cd ../ont/
  java -jar -Dserver.port=8081 ont.jar &
- 
- 
-<li>9.服务器上运行的是固定参数的,用 SpotTemplate 为对应的币种1.创建运行类,2.并创建push 类. 3.在 pom 中添加execution 标签 
-<li>10. 启动时,市场价下单
+  
+<li>9. 启动时,市场价下单
+<li>10. <br>
+root/<br>
+    -- cp.sh<br>
+    -- huobi-command-util.jar<br>
+    -- serverStartup.sh<br>
+    -- jars <br>
+        -- m1/m1-jar-with-dependencies<br>
+        -- m2/m2-jar-with-dependencies<br>
+        -- ...<br>
+<li>11.  
+本地运行: nohup java -jar spot-jar-with-dependencies.jar spot usdt
+server 运行:<br>
+    1. upload spot-jar-with-dependencies.jar to /root/ <br>
+    2. sh cp.sh <br>
+    3. if  huobi-command-util.jar is not running, start it: (alias  startutil) <br>
