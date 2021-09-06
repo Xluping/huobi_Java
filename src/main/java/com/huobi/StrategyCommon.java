@@ -229,5 +229,10 @@ public class StrategyCommon {
         return fee;
     }
 
+    public static void resetFeeAndProfit() {
+        profit = BigDecimal.ZERO;
+        fee = BigDecimal.ZERO;
+        logger.info("====== StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", profit.toString(), fee.toString());
+    }
 
 }

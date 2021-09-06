@@ -196,6 +196,7 @@ public class M1SpotTemplate implements Job {
     }
 
     public void launch() {
+        StrategyCommon.resetFeeAndProfit();
 //        HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error("====== {}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, spot);
 

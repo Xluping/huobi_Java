@@ -197,6 +197,7 @@ public class M3SpotTemplate implements Job {
     }
 
     public void launch() {
+        StrategyCommon.resetFeeAndProfit();
         //        HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error("====== {}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, spot);
         BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
