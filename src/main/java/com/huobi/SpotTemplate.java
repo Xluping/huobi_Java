@@ -27,9 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @create: 8/24/21 9:12 PM
  */
 public class SpotTemplate implements Job {
-    private static final String BASE_CURRENCY = "ht";
+    private static String BASE_CURRENCY = "";
     private static final String QUOTE_CURRENCY = "usdt";
-    private static final String SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY; //htusdt
+    private static String SYMBOL = ""; //htusdt
     private static String PORTION = "2000";
     private static final int CURRENT_STRATEGY = 1;
 
@@ -48,19 +48,27 @@ public class SpotTemplate implements Job {
     private static final Logger logger = LoggerFactory.getLogger(SpotTemplate.class);
 
     public static void main(String[] args) {
-        PORTION = args[0];
+        BASE_CURRENCY = args[0];
+        PORTION = args[1];
+        if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
+            BASE_CURRENCY = "ht";
+            logger.error("====== main: BASE_CURRENCY == null || BASE_CURRENCY.isEmpty() set BASE_CURRENCY = {} ======", BASE_CURRENCY);
+        }
+        SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY;
+
         if (PORTION == null || PORTION.isEmpty()) {
             PORTION = "3000";
             logger.error("====== {}-main: PORTION == null || PORTION.isEmpty() set PORTION = {} ======", SYMBOL, PORTION);
         }
-        logger.error("====== {}-main:  PORTION = {} ======", SYMBOL, PORTION);
+        logger.error("====== main:  SYMBOL = {} ======", SYMBOL);
+        logger.error("====== main:  PORTION = {} ======", PORTION);
 
         SpotTemplate spotBuyer = new SpotTemplate();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/5 * * * * ?", SpotTemplate.class, SYMBOL);
         // TODO xlp 9/5/21 5:56 AM  : 创建新币种启动类后, 创建 EveryDayPush
-        jobManagement.addJob("0 0 8,12,19,22 * * ?", EveryDayPush.class, SYMBOL + "-PUSH");
+//        jobManagement.addJob("0 0 8,12,19,22 * * ?", new EveryDayPush(BASE_CURRENCY).getClass(), SYMBOL + "-PUSH");
         jobManagement.startJob();
     }
 
@@ -234,7 +242,7 @@ public class SpotTemplate implements Job {
                 String clientId = entry.getKey();
                 Order buyOrder;
                 boolean isLimit = true;
-                BigDecimal buyPrice = new BigDecimal("0");
+                BigDecimal buyPrice;
                 if (clientId.contains(spot.getSymbol())) {
                     //buy limit
                     buyOrder = HuobiUtil.getOrderByClientId(clientId);
