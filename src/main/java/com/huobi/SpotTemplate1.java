@@ -24,8 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @package: com.huobi
  * @author: Luping
  * @create: 8/24/21 9:12 PM
+ * <p>
+ * 高频
  */
-public class SpotTemplate implements Job {
+public class SpotTemplate1 implements Job {
     private static String BASE_CURRENCY = "";
     private static final String QUOTE_CURRENCY = "usdt";
     private static String SYMBOL = ""; //htusdt
@@ -44,7 +46,7 @@ public class SpotTemplate implements Job {
     private static double mediumCount = 0;
     private static double lowCount = 0;
     private String level = "high";
-    private static final Logger logger = LoggerFactory.getLogger(SpotTemplate.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpotTemplate1.class);
 
     public static void main(String[] args) {
         BASE_CURRENCY = args[0];
@@ -64,10 +66,10 @@ public class SpotTemplate implements Job {
         logger.error("====== main:  SYMBOL = {} ======", SYMBOL);
         logger.error("====== main:  PORTION = {} ======", PORTION);
 
-        SpotTemplate spotBuyer = new SpotTemplate();
+        SpotTemplate1 spotBuyer = new SpotTemplate1();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
-        jobManagement.addJob("0/5 * * * * ?", SpotTemplate.class, SYMBOL);
+        jobManagement.addJob("0/5 * * * * ?", SpotTemplate1.class, SYMBOL);
         // TODO xlp 9/5/21 5:56 AM  : 创建新币种启动类后, 创建 EveryDayPush
 //        jobManagement.addJob("0 0 8,12,19,22 * * ?", new EveryDayPush(BASE_CURRENCY).getClass(), SYMBOL + "-PUSH");
         jobManagement.startJob();

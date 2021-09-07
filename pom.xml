@@ -130,11 +130,49 @@
                     <execution>
                         <id>m1</id>
                         <configuration>
-                            <finalName>spot</finalName>
-                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
+                            <finalName>spot1</finalName>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.SpotTemplate</mainClass>
+                                    <mainClass>com.huobi.SpotTemplate1</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>m2</id>
+                        <configuration>
+                            <finalName>spot2</finalName>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.huobi.SpotTemplate2</mainClass>
+                                </manifest>
+                            </archive>
+                            <descriptorRefs>
+                                <descriptorRef>jar-with-dependencies</descriptorRef>
+                            </descriptorRefs>
+                        </configuration>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>m3</id>
+                        <configuration>
+                            <finalName>spot3</finalName>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
+                            <archive>
+                                <manifest>
+                                    <mainClass>com.huobi.SpotTemplate3</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
