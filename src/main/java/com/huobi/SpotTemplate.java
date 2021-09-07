@@ -50,6 +50,8 @@ public class SpotTemplate implements Job {
     public static void main(String[] args) {
         BASE_CURRENCY = args[0];
         PORTION = args[1];
+//        BASE_CURRENCY = "ht";
+//        PORTION = "2000";
         if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
             BASE_CURRENCY = "ht";
             logger.error("====== main: BASE_CURRENCY == null || BASE_CURRENCY.isEmpty() set BASE_CURRENCY = {} ======", BASE_CURRENCY);
