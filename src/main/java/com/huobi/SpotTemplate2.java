@@ -63,6 +63,7 @@ public class SpotTemplate2 implements Job {
         }
         logger.error("====== main:  SYMBOL = {} ======", SYMBOL);
         logger.error("====== main:  PORTION = {} ======", PORTION);
+        logger.error("====== main:  STRATEGY = {} ======", CURRENT_STRATEGY);
 
         SpotTemplate2 spotBuyer = new SpotTemplate2();
         spotBuyer.init();
