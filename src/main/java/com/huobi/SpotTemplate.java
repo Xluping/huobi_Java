@@ -5,7 +5,6 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.trade.Order;
-import com.huobi.push.EveryDayPush;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.slf4j.Logger;
@@ -50,6 +49,8 @@ public class SpotTemplate implements Job {
     public static void main(String[] args) {
         BASE_CURRENCY = args[0];
         PORTION = args[1];
+//        BASE_CURRENCY = "ht";
+//        PORTION = "2000";
         if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
             BASE_CURRENCY = "ht";
             logger.error("====== main: BASE_CURRENCY == null || BASE_CURRENCY.isEmpty() set BASE_CURRENCY = {} ======", BASE_CURRENCY);
@@ -87,7 +88,7 @@ public class SpotTemplate implements Job {
     }
 
 
-    public void prepareSpot() {
+    public synchronized void prepareSpot() {
         spot.setBaseCurrency(BASE_CURRENCY);
         spot.setQuoteCurrency(QUOTE_CURRENCY);
         BigDecimal totalBalance = new BigDecimal(PORTION);
@@ -228,7 +229,7 @@ public class SpotTemplate implements Job {
     /**
      * 监听价格变化
      */
-    public void priceListener() {
+    public synchronized void priceListener() {
         try {
             BigDecimal latestPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
             // 处理之前的买单,卖单
@@ -258,7 +259,7 @@ public class SpotTemplate implements Job {
                     balanceChanged = true;
                     logger.error("====== {}-SpotBuyer-买单已成交 : {} ======", SYMBOL, buyOrder.toString());
                     BigDecimal buyAmount = buyOrder.getFilledAmount();
-
+                    // TODO xlp 9/7/21 11:01 AM  :  matchresults 接口获取准确值
                     StrategyCommon.setFee(buyOrder.getFilledFees());
                     if (isLimit) {
                         BigDecimal cost = buyAmount.multiply(buyPrice);
@@ -322,11 +323,12 @@ public class SpotTemplate implements Job {
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
                 BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
-                if (pureProfit.compareTo(new BigDecimal("0")) > 0) {
+                if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
 
                     String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
                             " 点卡余额: " + pointBalance.toString();
                     HuobiUtil.weChatPusher(sb, 2);
+                    pureProfit = BigDecimal.ZERO;
                 }
                 orderCount.getAndSet(0);
 
