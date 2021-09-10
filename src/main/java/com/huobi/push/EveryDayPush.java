@@ -1,6 +1,5 @@
 package com.huobi.push;
 
-import com.huobi.HuobiUtil;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -22,8 +21,8 @@ public class EveryDayPush implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        String msg = HuobiUtil.getBalance4Push(spotAccountId, baseCurrency, quoteCurrency);
-        HuobiUtil.weChatPusher(msg, 2);
+//        String msg = HuobiUtil.getBalance4Push(spotAccountId, baseCurrency, quoteCurrency);
+//        HuobiUtil .weChatPusher(msg, 2);
     }
 
     public void setSpotAccountId(Long spotAccountId) {

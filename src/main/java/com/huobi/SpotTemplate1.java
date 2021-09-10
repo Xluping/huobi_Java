@@ -82,7 +82,7 @@ public class SpotTemplate1 implements Job {
     public void init() {
         try {
             prepareSpot();
-            HuobiUtil.cancelOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.BUY);
+            HuobiUtil.cancelOpenOrders(spotAccountId, SYMBOL, CURRENT_STRATEGY, OrderSideEnum.BUY);
             launch();
         } catch (Exception exception) {
             logger.error("====== {}-{}-init-startup: {} ======", SYMBOL, CURRENT_STRATEGY, exception.getMessage());
@@ -323,7 +323,7 @@ public class SpotTemplate1 implements Job {
                     String clientId = entry.getKey();
                     Order remainOrder = HuobiUtil.getOrderByClientId(clientId);
                     logger.error("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
-                    HuobiUtil.cancelOrder(clientId);
+                    HuobiUtil.cancelOrder(CURRENT_STRATEGY, clientId);
                     iterator.remove();
                 }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
@@ -333,7 +333,7 @@ public class SpotTemplate1 implements Job {
 
                     String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
                             " 点卡余额: " + pointBalance.toString();
-                    HuobiUtil.weChatPusher(sb, 2);
+                    HuobiUtil.weChatPusher(CURRENT_STRATEGY, sb, 2);
                 }
                 orderCount.getAndSet(0);
 
