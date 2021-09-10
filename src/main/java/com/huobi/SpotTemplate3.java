@@ -209,7 +209,7 @@ public class SpotTemplate3 implements Job {
     }
 
     public void launch() {
-        StrategyCommon.resetFeeAndProfit();
+        StrategyCommon.resetFeeAndProfit(SYMBOL, CURRENT_STRATEGY);
 //        HuobiUtil.weChatPusher("策略启动: " + spot.toString(), 1);
         logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, CURRENT_STRATEGY, spot);
         BigDecimal currentTradPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
@@ -218,7 +218,7 @@ public class SpotTemplate3 implements Job {
         usdtBalance = usdtBalance.min(HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency()));
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
-            StrategyCommon.buyMarket(spot, currentTradPrice, spot.getPortionHigh());
+            StrategyCommon.buyMarket(CURRENT_STRATEGY, spot, currentTradPrice, spot.getPortionHigh());
         } else {
             logger.error("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
         }
@@ -281,6 +281,7 @@ public class SpotTemplate3 implements Job {
                     orderCount.getAndIncrement();
                     buyIterator.remove();
                 } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
+                    balanceChanged = true;
                     logger.error("====== {}-{}-priceListener-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
                     orderCount.getAndDecrement();
                     buyIterator.remove();
@@ -310,7 +311,9 @@ public class SpotTemplate3 implements Job {
                 }
 
             }
+
             //本轮买单已全部卖出. 重启应用
+            // 启动时,余额不足 不执行此逻辑, insufficientFound=true
             if (sellOrderMap.size() == 0 && !insufficientFound) {
                 logger.error("====== {}-{}-priceListener-开始清理残余买单.======", SYMBOL, CURRENT_STRATEGY);
                 Iterator<Map.Entry<String, BigDecimal>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
@@ -331,7 +334,6 @@ public class SpotTemplate3 implements Job {
                     String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
                             " 点卡余额: " + pointBalance.toString();
                     HuobiUtil.weChatPusher(sb, 2);
-                    pureProfit = BigDecimal.ZERO;
                 }
                 orderCount.getAndSet(0);
 
@@ -401,10 +403,10 @@ public class SpotTemplate3 implements Job {
 
 
                     if (usdtBalance.compareTo(usdtPortion) >= 0) {
-                        setInsufficientFound(false);
-                        StrategyCommon.buyLimit(spot, priceList.get(i.get()), usdtPortion);
+                        insufficientFound = false;
+                        StrategyCommon.buyLimit(CURRENT_STRATEGY, spot, priceList.get(i.get()), usdtPortion);
                     } else {
-                        setInsufficientFound(true);
+                        insufficientFound = true;
                         ticker.getAndAdd(1);
                         if (ticker.get() % 10 == 0) {
                             ticker.getAndSet(1);
@@ -418,10 +420,6 @@ public class SpotTemplate3 implements Job {
         } catch (SDKException e) {
             logger.error("====== {}-{}-priceListener: {} ======", SYMBOL, CURRENT_STRATEGY, e.getMessage());
         }
-    }
-
-    public static void setInsufficientFound(boolean flag) {
-        insufficientFound = flag;
     }
 
 }

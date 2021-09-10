@@ -20,8 +20,8 @@ public class StrategyCommon {
     private static final ArrayList<BigDecimal> priceList = new ArrayList<>();
     private static final ConcurrentHashMap<String, BigDecimal> buyOrderMap = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Long, BigDecimal> sellOrderMap = new ConcurrentHashMap<>();
-    private static volatile BigDecimal profit = new BigDecimal("0");
-    private static volatile BigDecimal fee = new BigDecimal("0");
+    private static volatile BigDecimal profit = BigDecimal.ZERO;
+    private static volatile BigDecimal fee = BigDecimal.ZERO;
 
 
     static Logger logger = LoggerFactory.getLogger(StrategyCommon.class);
@@ -30,25 +30,25 @@ public class StrategyCommon {
         priceList.clear();
         if (strategy == 1) {
             // 高频
-            calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE_1, Constants.HIGH_COUNT_1, new BigDecimal("0"));
+            calculateBuyPrice(1, latestPrice, scale, Constants.HIGH_RANGE_1, Constants.HIGH_COUNT_1, new BigDecimal("0"));
             //稳健
-            calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE_1 - Constants.HIGH_RANGE_1, Constants.MEDIUM_COUNT_1, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_1)));
+            calculateBuyPrice(1, latestPrice, scale, Constants.MEDIUM_RANGE_1 - Constants.HIGH_RANGE_1, Constants.MEDIUM_COUNT_1, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_1)));
             //保守
-            calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE_1 - Constants.MEDIUM_RANGE_1, Constants.LOW_COUNT_1, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_1)));
+            calculateBuyPrice(1, latestPrice, scale, Constants.LOW_RANGE_1 - Constants.MEDIUM_RANGE_1, Constants.LOW_COUNT_1, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_1)));
         } else if (strategy == 2) {
             // 高频
-            calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE_2, Constants.HIGH_COUNT_2, new BigDecimal("0"));
+            calculateBuyPrice(2, latestPrice, scale, Constants.HIGH_RANGE_2, Constants.HIGH_COUNT_2, new BigDecimal("0"));
             //稳健
-            calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE_2 - Constants.HIGH_RANGE_2, Constants.MEDIUM_COUNT_2, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_2)));
+            calculateBuyPrice(2, latestPrice, scale, Constants.MEDIUM_RANGE_2 - Constants.HIGH_RANGE_2, Constants.MEDIUM_COUNT_2, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_2)));
             //保守
-            calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE_2 - Constants.MEDIUM_RANGE_2, Constants.LOW_COUNT_2, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_2)));
+            calculateBuyPrice(2, latestPrice, scale, Constants.LOW_RANGE_2 - Constants.MEDIUM_RANGE_2, Constants.LOW_COUNT_2, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_2)));
         } else if (strategy == 3) {
             // 高频
-            calculateBuyPrice(latestPrice, scale, Constants.HIGH_RANGE_3, Constants.HIGH_COUNT_3, new BigDecimal("0"));
+            calculateBuyPrice(3, latestPrice, scale, Constants.HIGH_RANGE_3, Constants.HIGH_COUNT_3, new BigDecimal("0"));
             //稳健
-            calculateBuyPrice(latestPrice, scale, Constants.MEDIUM_RANGE_3 - Constants.HIGH_RANGE_3, Constants.MEDIUM_COUNT_3, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_3)));
+            calculateBuyPrice(3, latestPrice, scale, Constants.MEDIUM_RANGE_3 - Constants.HIGH_RANGE_3, Constants.MEDIUM_COUNT_3, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_3)));
             //保守
-            calculateBuyPrice(latestPrice, scale, Constants.LOW_RANGE_3 - Constants.MEDIUM_RANGE_3, Constants.LOW_COUNT_3, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_3)));
+            calculateBuyPrice(3, latestPrice, scale, Constants.LOW_RANGE_3 - Constants.MEDIUM_RANGE_3, Constants.LOW_COUNT_3, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_3)));
         }
 
         return priceList;
@@ -68,13 +68,8 @@ public class StrategyCommon {
 
     /**
      * 根据参数 计算补仓点位
-     *
-     * @param latestPrice
-     * @param scale
-     * @param range
-     * @param count
      */
-    public static synchronized void calculateBuyPrice(BigDecimal latestPrice, int scale, double range, double count, BigDecimal previousPercent) {
+    public static synchronized void calculateBuyPrice(int strategy, BigDecimal latestPrice, int scale, double range, double count, BigDecimal previousPercent) {
         BigDecimal pre = previousPercent.multiply(new BigDecimal("0.01"));
         BigDecimal base = new BigDecimal("1");
         double gridPercentDoubleMedium = range / count;
@@ -84,9 +79,9 @@ public class StrategyCommon {
             BigDecimal downTo = goDown.add(pre);
             System.out.println(downTo);
             BigDecimal buyPosition = base.subtract(downTo);
-            logger.error("====== StrategyCommon-buyPosition(下跌到)= {} * 100% ======", buyPosition.toString());
+            logger.error("====== {}-StrategyCommon-buyPosition(下跌到)= {} * 100% ======", strategy, buyPosition.toString());
             BigDecimal buyPrice = latestPrice.multiply(buyPosition).setScale(scale, RoundingMode.DOWN);
-            logger.error("====== StrategyCommon-buyPrice= {} ======", buyPrice.toString());
+            logger.error("====== {}-StrategyCommon-buyPrice= {} ======", strategy, buyPrice.toString());
             priceList.add(buyPrice);
         }
         logger.error("==============================================================");
@@ -98,16 +93,14 @@ public class StrategyCommon {
      * <p>
      * 根据 usdt 计算买入的币的数量
      *
-     * @param spot
-     * @param buyPrice
      * @param usdt     usdt 数量
      */
-    public static synchronized void buyLimit(Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
+    public static synchronized void buyLimit(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
 
         BigDecimal orderValue = new BigDecimal("0");
         //最小下单金额
         if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== {}-StrategyCommon-buyLimit: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), spot.getMinOrderValue());
+            logger.error("====== {}-{}-StrategyCommon-buyLimit: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), strategy, spot.getMinOrderValue());
 
             orderValue = orderValue.add(spot.getMinOrderValue());
         } else {
@@ -125,7 +118,7 @@ public class StrategyCommon {
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
             orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
-            logger.error("====== {}-StrategyCommon-buyLimit: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), spot.getLimitOrderMinOrderAmt());
+            logger.error("====== {}-{}-StrategyCommon-buyLimit: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
 
         } else {
             orderAmount = orderAmount.add(coinAmount);
@@ -134,20 +127,19 @@ public class StrategyCommon {
         CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), buyPrice, orderAmount);
         CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
         buyOrderMap.putIfAbsent(clientOrderId, orderAmount);
-        logger.error("====== {}-StrategyCommon-buyLimit: 限价 BUY at: {}, clientOrderId : {}  ======", spot.getSymbol(), buyPrice.toString(), clientOrderId);
-
+        logger.error("====== {}-{}-StrategyCommon-buyLimit: 限价 BUY at: {}, clientOrderId : {}  ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId);
 
     }
 
     /**
      * launch 后 市场价下单
      */
-    public static synchronized void buyMarket(Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
+    public static synchronized void buyMarket(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
 
         BigDecimal orderValue = new BigDecimal("0");
         //最小下单金额
         if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== {}-StrategyCommon-buyMarket: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), spot.getMinOrderValue());
+            logger.error("====== {}-{}-StrategyCommon-buyMarket: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), strategy, spot.getMinOrderValue());
             orderValue = orderValue.add(spot.getMinOrderValue());
         } else {
             orderValue = orderValue.add(usdt);
@@ -159,7 +151,7 @@ public class StrategyCommon {
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
             orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
-            logger.error("====== {}-StrategyCommon-buyLimit: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), spot.getLimitOrderMinOrderAmt());
+            logger.error("====== {}-{}-StrategyCommon-buyLimit: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
 
         } else {
             orderAmount = orderAmount.add(coinAmount);
@@ -168,16 +160,13 @@ public class StrategyCommon {
         CreateOrderRequest buyMarketRequest = CreateOrderRequest.spotBuyMarket(spot.getAccountId(), spot.getSymbol(), orderValue);
         Long buyMarketId = CurrentAPI.getApiInstance().getTradeClient().createOrder(buyMarketRequest);
         buyOrderMap.putIfAbsent(buyMarketId.toString(), orderAmount);
-        logger.error("====== {}-StrategyCommon-buyMarket: 市场价 BUY, buyMarketId: {}, usdt: {} ======", spot.getSymbol(), buyMarketId, orderValue);
+        logger.error("====== {}-{}-StrategyCommon-buyMarket: 市场价 BUY, buyMarketId: {}, usdt: {} ======", spot.getSymbol(), strategy, buyMarketId, orderValue);
 
     }
 
     /**
      * 计算卖单价格, 并挂单.
      *
-     * @param spot
-     * @param buyPrice
-     * @param coinAmount
      */
     public static synchronized void sellLimit(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
         // 计算卖出价格 buyPrice * (1+offset);
@@ -196,7 +185,7 @@ public class StrategyCommon {
         BigDecimal orderAmount = new BigDecimal("0");
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            logger.error("====== {}-StrategyCommon-placeSellOrder: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), spot.getLimitOrderMinOrderAmt());
+            logger.error("====== {}-{}-StrategyCommon-placeSellOrder: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
 
             orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
         } else {
@@ -206,7 +195,7 @@ public class StrategyCommon {
         CreateOrderRequest sellLimitRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), spot.getSymbol(), sellPrice, orderAmount);
         Long orderId = CurrentAPI.getApiInstance().getTradeClient().createOrder(sellLimitRequest);
         sellOrderMap.putIfAbsent(orderId, orderAmount);
-        logger.error("====== {}-StrategyCommon-SELL at: {}, orderId : {}  ======", spot.getSymbol(), sellPrice.toString(), orderId);
+        logger.error("====== {}-{}-StrategyCommon-SELL at: {}, orderId : {}  ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), orderId);
 
 
     }
@@ -229,10 +218,10 @@ public class StrategyCommon {
         return fee;
     }
 
-    public static void resetFeeAndProfit() {
+    public static void resetFeeAndProfit(String symbol, int currentStrategy) {
         profit = BigDecimal.ZERO;
         fee = BigDecimal.ZERO;
-        logger.info("====== StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", profit.toString(), fee.toString());
+        logger.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, currentStrategy, profit.toString(), fee.toString());
     }
 
 }
