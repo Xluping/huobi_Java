@@ -136,7 +136,7 @@ public class HuobiUtil {
      *             1775 价格监控
      *             1776 其他
      */
-    public static void weChatPusher(String msg, int type) {
+    public static void weChatPusher(int strategy, String msg, int type) {
         try {
             Map<String, Object> params = new HashMap<>();
             Long[] topics = null;
@@ -151,10 +151,10 @@ public class HuobiUtil {
 
             String body = HbdmHttpClient.getInstance().doPost2WX(Constants.WX_PUSHER_URL, params);
             if (body.contains("处理成功")) {
-                logger.error("=== HuobiUtil-weChatPusher 推送成功: {} ======", msg);
+                logger.error("=== HuobiUtil-weChatPusher strategy-{}-推送成功: {} ======", strategy, msg);
             }
         } catch (Exception e) {
-            logger.error("=== HuobiUtil-weChatPusher: 无法推送消息 ======");
+            logger.error("=== HuobiUtil-weChatPusher: strategy-{}-无法推送消息 ======", strategy);
             e.printStackTrace();
         }
     }
@@ -182,8 +182,8 @@ public class HuobiUtil {
      * @param orderSide
      * @return
      */
-    public static void cancelOpenOrders(Long accountId, String symbol, OrderSideEnum orderSide) {
-        logger.error("====== HuobiUtil-cancelOpenOrders: 取消 {} 的所有 {} 单 ======", symbol, orderSide);
+    public static void cancelOpenOrders(Long accountId, String symbol, int strategy, OrderSideEnum orderSide) {
+        logger.error("====== HuobiUtil-cancelOpenOrders: 取消 {}-{} 的所有 {} 单 ======", symbol, strategy, orderSide);
 
         List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
@@ -191,7 +191,7 @@ public class HuobiUtil {
                 .side(orderSide)
                 .build());
 
-        logger.error("====== HuobiUtil-cancelOpenOrders: 之前有 {} 个订单======", orderList.size());
+        logger.error("====== HuobiUtil-cancelOpenOrders: strategy-{}-之前有 {} 个订单======", strategy, orderList.size());
 
         orderList.forEach(order -> {
             CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId());
@@ -205,10 +205,10 @@ public class HuobiUtil {
      *
      * @param clientOrderId
      */
-    public static int cancelOrder(String clientOrderId) {
+    public static int cancelOrder(int strategy, String clientOrderId) {
         int code = CurrentAPI.getApiInstance().getTradeClient().cancelOrder(clientOrderId);
         if (code == 7) {
-            logger.error("=== HuobiUtil-cancelOrder: {} canceled ======", clientOrderId);
+            logger.error("=== HuobiUtil-cancelOrder: strategy-{}-{} canceled ======", strategy, clientOrderId);
         }
         return code;
     }
@@ -222,7 +222,6 @@ public class HuobiUtil {
      */
     public static Order getOrderByOrderId(Long orderId) {
         Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(orderId);
-//        logger.info("=== HuobiUtil-卖单: {}" , order);
         return order;
     }
 
@@ -234,7 +233,6 @@ public class HuobiUtil {
      */
     public static Order getOrderByClientId(String clientOrderId) {
         Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
-//        logger.info("=== HuobiUtil-买单: {}" , order);
         return order;
     }
 
