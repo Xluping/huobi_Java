@@ -1,17 +1,13 @@
 package com.huobi.service.huobi;
 
-import java.math.BigDecimal;
 import java.util.List;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 
 import com.huobi.client.ETFClient;
 import com.huobi.client.req.etf.ETFSwapListRequest;
 import com.huobi.client.req.etf.ETFSwapRequest;
-import com.huobi.constant.Constants;
-import com.huobi.constant.HuobiOptions;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.EtfSwapDirectionEnum;
 import com.huobi.model.etf.ETFConfig;
@@ -31,9 +27,9 @@ public class HuobiETFService implements ETFClient {
   public static final String GET_SWAP_LIST_PATH = "/etf/swap/list";
 
 
-  private Options options;
+  private final Options options;
 
-  private HuobiRestConnection restConnection;
+  private final HuobiRestConnection restConnection;
 
   public HuobiETFService(Options options) {
     this.options = options;

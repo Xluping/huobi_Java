@@ -12,8 +12,6 @@ import com.huobi.client.req.margin.IsolatedMarginLoanInfoRequest;
 import com.huobi.client.req.margin.IsolatedMarginLoanOrdersRequest;
 import com.huobi.client.req.margin.IsolatedMarginRepayLoanRequest;
 import com.huobi.client.req.margin.IsolatedMarginTransferRequest;
-import com.huobi.constant.Constants;
-import com.huobi.constant.HuobiOptions;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.MarginTransferDirectionEnum;
 import com.huobi.model.isolatedmargin.IsolatedMarginAccount;
@@ -38,9 +36,9 @@ public class HuobiIsolatedMarginService implements IsolatedMarginClient {
   public static final String REPAY_LOAN_PATH = "/v1/margin/orders/{order-id}/repay";
 
 
-  private Options options;
+  private final Options options;
 
-  private HuobiRestConnection restConnection;
+  private final HuobiRestConnection restConnection;
 
   public HuobiIsolatedMarginService(Options options) {
     this.options = options;

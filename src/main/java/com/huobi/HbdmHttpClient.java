@@ -1,15 +1,12 @@
 package com.huobi;
 
 import com.alibaba.fastjson.JSON;
-import com.huobi.constant.Constants;
-import com.huobi.service.huobi.signature.ApiSignature;
 import org.apache.commons.collections4.MapUtils;
 import okhttp3.*;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class HbdmHttpClient {
 

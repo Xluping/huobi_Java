@@ -4,9 +4,7 @@ import com.huobi.client.AccountClient;
 import com.huobi.client.GenericClient;
 import com.huobi.client.MarketClient;
 import com.huobi.client.TradeClient;
-import com.huobi.constant.Constants;
 import com.huobi.constant.HuobiOptions;
-import com.huobi.service.huobi.connection.HuobiRestConnection;
 
 /**
  * @program: huobi-client
