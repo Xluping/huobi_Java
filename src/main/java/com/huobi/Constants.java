@@ -1,4 +1,4 @@
-package com.huobi.constant;
+package com.huobi;
 
 import java.math.BigDecimal;
 

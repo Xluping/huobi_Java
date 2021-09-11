@@ -11,10 +11,7 @@ import com.huobi.client.req.wallet.DepositAddressRequest;
 import com.huobi.client.req.wallet.DepositWithdrawRequest;
 import com.huobi.client.req.wallet.WithdrawAddressRequest;
 import com.huobi.client.req.wallet.WithdrawQuotaRequest;
-import com.huobi.constant.Constants;
-import com.huobi.constant.HuobiOptions;
 import com.huobi.constant.Options;
-import com.huobi.constant.enums.DepositWithdrawTypeEnum;
 import com.huobi.model.wallet.DepositAddress;
 import com.huobi.model.wallet.DepositWithdraw;
 import com.huobi.model.wallet.WithdrawAddressResult;
@@ -37,9 +34,9 @@ public class HuobiWalletService implements WalletClient {
   public static final String CANCEL_WITHDRAW_PATH = "/v1/dw/withdraw-virtual/{withdraw-id}/cancel";
   public static final String DEPOSIT_WITHDRAW_PATH = "/v1/query/deposit-withdraw";
 
-  private Options options;
+  private final Options options;
 
-  private HuobiRestConnection restConnection;
+  private final HuobiRestConnection restConnection;
 
   public HuobiWalletService(Options options) {
     this.options = options;

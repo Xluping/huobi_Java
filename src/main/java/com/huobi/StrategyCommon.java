@@ -1,7 +1,7 @@
 package com.huobi;
 
 import com.huobi.client.req.trade.CreateOrderRequest;
-import com.huobi.constant.Constants;
+import lombok.Synchronized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,8 @@ public class StrategyCommon {
 
     static Logger logger = LoggerFactory.getLogger(StrategyCommon.class);
 
-    public static synchronized ArrayList<BigDecimal> calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
+    @Synchronized
+    public static ArrayList<BigDecimal> calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
         priceList.clear();
         if (strategy == 1) {
             // 高频
@@ -69,7 +70,8 @@ public class StrategyCommon {
     /**
      * 根据参数 计算补仓点位
      */
-    public static synchronized void calculateBuyPrice(int strategy, BigDecimal latestPrice, int scale, double range, double count, BigDecimal previousPercent) {
+    @Synchronized
+    public static void calculateBuyPrice(int strategy, BigDecimal latestPrice, int scale, double range, double count, BigDecimal previousPercent) {
         BigDecimal pre = previousPercent.multiply(new BigDecimal("0.01"));
         BigDecimal base = new BigDecimal("1");
         double gridPercentDoubleMedium = range / count;
@@ -77,11 +79,9 @@ public class StrategyCommon {
         for (int i = 1; i <= count; i++) {
             BigDecimal goDown = gridPercentMedium.multiply(new BigDecimal(String.valueOf(i))).multiply(new BigDecimal("0.01"));
             BigDecimal downTo = goDown.add(pre);
-            System.out.println(downTo);
             BigDecimal buyPosition = base.subtract(downTo);
-            logger.error("====== {}-StrategyCommon-buyPosition(下跌到)= {} * 100% ======", strategy, buyPosition.toString());
             BigDecimal buyPrice = latestPrice.multiply(buyPosition).setScale(scale, RoundingMode.DOWN);
-            logger.error("====== {}-StrategyCommon-buyPrice= {} ======", strategy, buyPrice.toString());
+            logger.error("====== {}-StrategyCommon-buyPosition: 下跌 {}% 到 {}% = {} ======", strategy, downTo.multiply(new BigDecimal("100")).toString(), buyPosition.multiply(new BigDecimal("100")).toString(), buyPrice.toString());
             priceList.add(buyPrice);
         }
         logger.error("==============================================================");
@@ -93,9 +93,10 @@ public class StrategyCommon {
      * <p>
      * 根据 usdt 计算买入的币的数量
      *
-     * @param usdt     usdt 数量
+     * @param usdt usdt 数量
      */
-    public static synchronized void buyLimit(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
+    @Synchronized
+    public static void buyLimit(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
 
         BigDecimal orderValue = new BigDecimal("0");
         //最小下单金额
@@ -134,7 +135,8 @@ public class StrategyCommon {
     /**
      * launch 后 市场价下单
      */
-    public static synchronized void buyMarket(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
+    @Synchronized
+    public static void buyMarket(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
 
         BigDecimal orderValue = new BigDecimal("0");
         //最小下单金额
@@ -166,9 +168,9 @@ public class StrategyCommon {
 
     /**
      * 计算卖单价格, 并挂单.
-     *
      */
-    public static synchronized void sellLimit(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
+    @Synchronized
+    public static void sellLimit(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
         // 计算卖出价格 buyPrice * (1+offset);
         BigDecimal sellPrice = null;
         if (currentStrategy == 1) {
@@ -223,5 +225,6 @@ public class StrategyCommon {
         fee = BigDecimal.ZERO;
         logger.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, currentStrategy, profit.toString(), fee.toString());
     }
+
 
 }

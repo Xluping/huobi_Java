@@ -3,7 +3,6 @@ package com.huobi;
 import com.huobi.client.req.account.AccountBalanceRequest;
 import com.huobi.client.req.market.MarketTradeRequest;
 import com.huobi.client.req.trade.OpenOrdersRequest;
-import com.huobi.constant.Constants;
 import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.model.account.Account;
 import com.huobi.model.account.AccountBalance;
@@ -236,5 +235,16 @@ public class HuobiUtil {
         return order;
     }
 
+    public static List<Order> getOpenOrders(Long accountId, String symbol, OrderSideEnum side) {
+        List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
+                .accountId(accountId)
+                .symbol(symbol)
+                .side(side)
+                .build());
+        orderList.forEach(order -> {
+            logger.error("=== HuobiUtil-getOpenOrders: " + order.toString() + " ======");
+        });
+        return orderList;
+    }
 
 }
