@@ -223,7 +223,7 @@ public class TradeClientExample {
       System.out.println(new Date(matchResult.getCreatedAt()) + " All : " + matchResult.toString());
     });
 
-    String symbols = symbol + ",eosusdt";
+    String symbols = "csprusdt";
     List<FeeRate> feeRateList = tradeService.getFeeRate(FeeRateRequest.builder().symbols(symbols).build());
     feeRateList.forEach(feeRate -> {
       System.out.println(feeRate.toString());
