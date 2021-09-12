@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.huobi.client.req.etf.ETFSwapListRequest;
 import com.huobi.client.req.etf.ETFSwapRequest;
-import com.huobi.constant.Constants;
+import com.huobi.Constants;
 import com.huobi.constant.HuobiOptions;
 import com.huobi.constant.enums.EtfSwapDirectionEnum;
 import com.huobi.model.etf.ETFConfig;

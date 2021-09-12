@@ -3,7 +3,6 @@ package com.huobi;
 import com.huobi.client.req.account.PointRequest;
 import com.huobi.client.req.trade.CreateOrderRequest;
 import com.huobi.client.req.trade.OpenOrdersRequest;
-import com.huobi.constant.Constants;
 import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.account.Point;
@@ -36,9 +35,9 @@ public class StrategyCommonTest {
         BigDecimal latestPrice = new BigDecimal("14.5678");
         ArrayList<Double> priceList = new ArrayList<Double>();
         BigDecimal base = new BigDecimal("1");
-        double gridPercentDouble = com.huobi.constant.Constants.HIGH_RANGE_1 / Constants.HIGH_COUNT_1;
+        double gridPercentDouble = 0.25;
         BigDecimal gridPercent = new BigDecimal(gridPercentDouble + "");
-        for (int i = 1; i <= Constants.HIGH_COUNT_1; i++) {
+        for (int i = 1; i <= 40; i++) {
             BigDecimal down = gridPercent.multiply(new BigDecimal("" + i)).multiply(new BigDecimal("0.01"));
             System.out.println(down);
             BigDecimal buyPosition = base.subtract(down);
