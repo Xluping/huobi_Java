@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class StrategyCommon {
     private static final ArrayList<BigDecimal> priceList = new ArrayList<>();
     private static final ConcurrentHashMap<String, BigDecimal> buyOrderMap = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Long, BigDecimal> sellOrderMap = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, BigDecimal> sellOrderMap = new ConcurrentHashMap<>();
     private static volatile BigDecimal profit = BigDecimal.ZERO;
     private static volatile BigDecimal fee = BigDecimal.ZERO;
 
@@ -63,7 +63,7 @@ public class StrategyCommon {
         return buyOrderMap;
     }
 
-    public static ConcurrentHashMap<Long, BigDecimal> getSellOrderMap() {
+    public static ConcurrentHashMap<String, BigDecimal> getSellOrderMap() {
         return sellOrderMap;
     }
 
@@ -93,19 +93,18 @@ public class StrategyCommon {
      * <p>
      * 根据 usdt 计算买入的币的数量
      *
-     * @param usdt usdt 数量
+     * @param type 1 buy-limit  2 buy-market
      */
     @Synchronized
-    public static void buyLimit(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
+    public static void buy(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt, int type) {
 
-        BigDecimal orderValue = new BigDecimal("0");
+        BigDecimal orderValue;
         //最小下单金额
         if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== {}-{}-StrategyCommon-buyLimit: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), strategy, spot.getMinOrderValue());
-
-            orderValue = orderValue.add(spot.getMinOrderValue());
+            logger.error("====== {}-{}-StrategyCommon: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), strategy, spot.getMinOrderValue());
+            orderValue = spot.getMinOrderValue();
         } else {
-            orderValue = orderValue.add(usdt);
+            orderValue = usdt;
         }
 
         BigDecimal coinAmount = orderValue.divide(buyPrice, RoundingMode.HALF_UP);
@@ -115,62 +114,38 @@ public class StrategyCommon {
         buyPrice = buyPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
         coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_UP);
 
-        BigDecimal orderAmount = new BigDecimal("0");
+        BigDecimal orderAmount;
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
-            logger.error("====== {}-{}-StrategyCommon-buyLimit: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
+            orderAmount = spot.getLimitOrderMinOrderAmt();
+            logger.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
 
         } else {
-            orderAmount = orderAmount.add(coinAmount);
+            orderAmount = coinAmount;
         }
+        CreateOrderRequest buyRequest;
 
-        CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), buyPrice, orderAmount);
-        CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
+        if (type == 1) {
+            // buy
+            logger.error("====== {}-{}-StrategyCommon:  限价-BUY at: {},  clientOrderId: {}, orderAmount: {} 币 ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, orderAmount);
+            buyRequest = CreateOrderRequest.spotBuyLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), buyPrice, orderAmount);
+        } else {
+            logger.error("====== {}-{}-StrategyCommon:  市价-BUY at: {},  clientOrderId: {}, orderAmount: {} USDT ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, orderValue);
+            buyRequest = CreateOrderRequest.spotBuyMarket(spot.getAccountId(), clientOrderId, spot.getSymbol(), orderValue);
+        }
+        CurrentAPI.getApiInstance().getTradeClient().createOrder(buyRequest);
         buyOrderMap.putIfAbsent(clientOrderId, orderAmount);
-        logger.error("====== {}-{}-StrategyCommon-buyLimit: 限价 BUY at: {}, clientOrderId : {}  ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId);
 
     }
 
-    /**
-     * launch 后 市场价下单
-     */
-    @Synchronized
-    public static void buyMarket(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt) {
-
-        BigDecimal orderValue = new BigDecimal("0");
-        //最小下单金额
-        if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== {}-{}-StrategyCommon-buyMarket: 按最小下单金额下单 BUY {} ======", spot.getSymbol(), strategy, spot.getMinOrderValue());
-            orderValue = orderValue.add(spot.getMinOrderValue());
-        } else {
-            orderValue = orderValue.add(usdt);
-        }
-        // 有可能币不够,极端情况
-        BigDecimal coinAmount = orderValue.divide(buyPrice, RoundingMode.HALF_DOWN);
-        coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_DOWN);
-        BigDecimal orderAmount = new BigDecimal("0");
-        //最小下单量限制
-        if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
-            logger.error("====== {}-{}-StrategyCommon-buyLimit: 按最小下单币数下单 BUY {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
-
-        } else {
-            orderAmount = orderAmount.add(coinAmount);
-        }
-
-        CreateOrderRequest buyMarketRequest = CreateOrderRequest.spotBuyMarket(spot.getAccountId(), spot.getSymbol(), orderValue);
-        Long buyMarketId = CurrentAPI.getApiInstance().getTradeClient().createOrder(buyMarketRequest);
-        buyOrderMap.putIfAbsent(buyMarketId.toString(), orderAmount);
-        logger.error("====== {}-{}-StrategyCommon-buyMarket: 市场价 BUY, buyMarketId: {}, usdt: {} ======", spot.getSymbol(), strategy, buyMarketId, orderValue);
-
-    }
 
     /**
      * 计算卖单价格, 并挂单.
+     * 1:sell-limit
+     * 2:sell-market
      */
     @Synchronized
-    public static void sellLimit(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount) {
+    public static void sell(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount, int type) {
         // 计算卖出价格 buyPrice * (1+offset);
         BigDecimal sellPrice = null;
         if (currentStrategy == 1) {
@@ -180,24 +155,30 @@ public class StrategyCommon {
         } else if (currentStrategy == 3) {
             sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_3);
         }
+        //自定义订单号
+        String clientOrderId = spot.getSymbol() + System.nanoTime();
         // 价格,币数 有严格的小数位限制
         sellPrice = sellPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
         coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_DOWN);
         //最小下单量限制
-        BigDecimal orderAmount = new BigDecimal("0");
+        BigDecimal orderAmount;
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            logger.error("====== {}-{}-StrategyCommon-placeSellOrder: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
-
-            orderAmount = orderAmount.add(spot.getLimitOrderMinOrderAmt());
+            logger.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
+            orderAmount = spot.getLimitOrderMinOrderAmt();
         } else {
-            orderAmount = orderAmount.add(coinAmount);
+            orderAmount = coinAmount;
         }
 
-        CreateOrderRequest sellLimitRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), spot.getSymbol(), sellPrice, orderAmount);
-        Long orderId = CurrentAPI.getApiInstance().getTradeClient().createOrder(sellLimitRequest);
-        sellOrderMap.putIfAbsent(orderId, orderAmount);
-        logger.error("====== {}-{}-StrategyCommon-SELL at: {}, orderId : {}  ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), orderId);
+        logger.error("====== {}-{}-StrategyCommon: SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+        CreateOrderRequest sellRequest;
+        if (type == 1) {
+            sellRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), sellPrice, orderAmount);
+        } else {
+            sellRequest = CreateOrderRequest.spotSellMarket(spot.getAccountId(), clientOrderId, spot.getSymbol(), orderAmount);
+        }
+        CurrentAPI.getApiInstance().getTradeClient().createOrder(sellRequest);
+        sellOrderMap.putIfAbsent(clientOrderId, orderAmount);
 
 
     }

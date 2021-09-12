@@ -40,7 +40,7 @@ public class HuobiUtil {
                 accountId = account.getId();
             }
         });
-        logger.info("====== HuobiUtil-getAccountIdByType: {} accountId= {} ======", type, accountId);
+        logger.error("====== HuobiUtil-getAccountIdByType: {} accountId= {} ======", type, accountId);
         return accountId > 0 ? accountId : -1;
     }
 
@@ -182,7 +182,6 @@ public class HuobiUtil {
      * @return
      */
     public static void cancelOpenOrders(Long accountId, String symbol, int strategy, OrderSideEnum orderSide) {
-        logger.error("====== HuobiUtil-cancelOpenOrders: 取消 {}-{} 的所有 {} 单 ======", symbol, strategy, orderSide);
 
         List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
@@ -190,8 +189,7 @@ public class HuobiUtil {
                 .side(orderSide)
                 .build());
 
-        logger.error("====== HuobiUtil-cancelOpenOrders: strategy-{}-之前有 {} 个订单======", strategy, orderList.size());
-
+        logger.error("====== HuobiUtil-cancelOpenOrders: 取消 {}-{} 的所有 {} 单,之前有 {} 个订单 ======", symbol, strategy, orderSide, orderList.size());
         orderList.forEach(order -> {
             CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId());
         });
@@ -235,6 +233,10 @@ public class HuobiUtil {
         return order;
     }
 
+    /**
+     * @param side buy, sell
+     * @return 某一方向上, 所有未成交订单.
+     */
     public static List<Order> getOpenOrders(Long accountId, String symbol, OrderSideEnum side) {
         List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)

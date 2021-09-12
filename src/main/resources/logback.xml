@@ -41,7 +41,7 @@
         </rollingPolicy>
     </appender>
 
-    <!-- error日志，按日期时间滚动 -->
+    <!-- error日志，按日期滚动 -->
     <appender name="ERROR-OUT" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- 日志存放位置 -->
         <file>${LOG_HOME}/error.log</file>
@@ -52,8 +52,8 @@
             <level>ERROR</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/error/error.%d{yyyy-MM-dd_HH}.log</fileNamePattern>
-            <maxHistory>168</maxHistory>
+            <fileNamePattern>${LOG_HOME}/error/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>60</maxHistory>
         </rollingPolicy>
     </appender>
 

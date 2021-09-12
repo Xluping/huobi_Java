@@ -27,12 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * 高频
  */
-public class SpotTemplate2 implements Job {
+public class SpotTemplateRestful implements Job {
     private static String BASE_CURRENCY = "";
     private static final String QUOTE_CURRENCY = "usdt";
-    private static String SYMBOL = ""; //htusdt
-    private static String PORTION = "2000";
-    private static int CURRENT_STRATEGY = 2;
+    private static String SYMBOL; //htusdt
+    private static String PORTION;
+    private static int CURRENT_STRATEGY = 1;
 
 
     private static Long spotAccountId = 14086863L;
@@ -49,7 +49,7 @@ public class SpotTemplate2 implements Job {
     private static volatile BigDecimal latestPrice;
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
-    private static final Logger logger = LoggerFactory.getLogger(SpotTemplate2.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpotTemplateRestful.class);
 
     public static void main(String[] args) {
         BASE_CURRENCY = args[0];
@@ -70,10 +70,10 @@ public class SpotTemplate2 implements Job {
         logger.error("====== main:  PORTION = {} ======", PORTION);
         logger.error("====== main:  STRATEGY = {} ======", CURRENT_STRATEGY);
 
-        SpotTemplate2 spotBuyer = new SpotTemplate2();
+        SpotTemplateRestful spotBuyer = new SpotTemplateRestful();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
-        jobManagement.addJob("0/5 * * * * ?", SpotTemplate2.class, SYMBOL);
+        jobManagement.addJob("0/4 * * * * ?", SpotTemplateRestful.class, SYMBOL);
         jobManagement.startJob();
     }
 
@@ -224,19 +224,19 @@ public class SpotTemplate2 implements Job {
         usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
-            StrategyCommon.buyMarket(currentStrategy, spot, latestPrice, spot.getPortionHigh());
+            StrategyCommon.buy(currentStrategy, spot, latestPrice, spot.getPortionHigh(), 2);
         } else {
             logger.error("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, currentStrategy, usdtBalance.toString());
         }
-        ConcurrentHashMap<Long, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
-        List<Order> sellOrders = HuobiUtil.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
-        logger.error("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrders.size());
-        sellOrders.forEach(order -> {
-            if ("api".equalsIgnoreCase(order.getSource())) {
-                sellOrderMap.putIfAbsent(order.getId(), order.getAmount());
-            }
-        });
-        logger.error("====== {}-{}-launch: 现有 api 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrderMap.size());
+//        ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
+//        List<Order> sellOrders = HuobiUtil.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
+//        logger.error("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrders.size());
+////        sellOrders.forEach(order -> {
+////            if ("api".equalsIgnoreCase(order.getSource())) {
+////                sellOrderMap.putIfAbsent(order.getId(), order.getAmount());
+////            }
+////        });
+//        logger.error("====== {}-{}-launch: 现有 api 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrderMap.size());
 
     }
 
@@ -251,7 +251,6 @@ public class SpotTemplate2 implements Job {
     @Synchronized
     public void priceListener() {
         try {
-            // TODO xlp 9/12/21 4:33 AM  :  第 1 次请求
             latestPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
             //价格三倍,WeChat提示并退出
             if (latestPrice.compareTo(spot.getTriplePrice()) >= 0) {
@@ -272,9 +271,9 @@ public class SpotTemplate2 implements Job {
             }
             // 处理之前的买单,卖单
             ConcurrentHashMap<String, BigDecimal> buyOrderMap = StrategyCommon.getBuyOrderMap();
-            ConcurrentHashMap<Long, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
+            ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
             Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> buyIterator = buyOrderMap.entrySet().iterator();
-            Iterator<ConcurrentHashMap.Entry<Long, BigDecimal>> sellIterator = sellOrderMap.entrySet().iterator();
+            Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> sellIterator = sellOrderMap.entrySet().iterator();
             // TODO xlp 9/12/21 4:37 AM  : * 每个API Key 在1秒之内限制10次  * 若接口不需要API Key，则每个IP在1秒内限制10次
             // TODO xlp 9/12/21 4:37 AM  :  当卖单超过 10 个, 超频
             int requestLimitNum = 0;
@@ -302,20 +301,21 @@ public class SpotTemplate2 implements Job {
                     BigDecimal buyAmount = buyOrder.getFilledAmount();
                     // TODO xlp 9/7/21 11:01 AM  :  matchresults 接口获取准确值
                     StrategyCommon.setFee(buyOrder.getFilledFees());
+                    BigDecimal buyAtPrice;
+                    BigDecimal cost;
                     if (isLimit) {
-                        BigDecimal cost = buyAmount.multiply(buyPrice);
-                        StrategyCommon.setFee(cost);
-                        BigDecimal buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
+                        cost = buyAmount.multiply(buyPrice);
+                        buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
                         buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-                        StrategyCommon.sellLimit(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount);
                     } else {
                         // buy market , amount is usdt;
-                        BigDecimal cost = buyOrder.getAmount();
-                        StrategyCommon.setFee(cost);
-                        BigDecimal buyAtPrice = latestPrice;
+                        cost = buyOrder.getAmount();
+                        buyAtPrice = latestPrice;
                         buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-                        StrategyCommon.sellLimit(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount);
                     }
+                    StrategyCommon.setFee(cost);
+                    StrategyCommon.sell(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount, 1);
+
                     orderCount.incrementAndGet();
                     buyIterator.remove();
                 } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
@@ -328,9 +328,9 @@ public class SpotTemplate2 implements Job {
             }
 
             while (sellIterator.hasNext() && requestLimitNum < 3) {
-                Map.Entry<Long, BigDecimal> entry = sellIterator.next();
-                Long orderId = entry.getKey();
-                Order sellOrder = HuobiUtil.getOrderByOrderId(orderId);
+                Map.Entry<String, BigDecimal> entry = sellIterator.next();
+                String orderId = entry.getKey();
+                Order sellOrder = HuobiUtil.getOrderByClientId(orderId);
 
                 if ("filled".equalsIgnoreCase(sellOrder.getState().trim())) {
                     balanceChanged = true;
@@ -447,7 +447,7 @@ public class SpotTemplate2 implements Job {
 
                     if (usdtBalance.compareTo(usdtPortion) >= 0) {
                         insufficientFound = false;
-                        StrategyCommon.buyLimit(CURRENT_STRATEGY, spot, priceList.get(i.get()), usdtPortion);
+                        StrategyCommon.buy(CURRENT_STRATEGY, spot, priceList.get(i.get()), usdtPortion, 1);
                     } else {
                         insufficientFound = true;
                         ticker.getAndAdd(1);
@@ -460,7 +460,8 @@ public class SpotTemplate2 implements Job {
                 }
 
             }
-        } catch (SDKException e) {
+        } catch (
+                SDKException e) {
             logger.error("====== {}-{}-priceListener: {} ======", SYMBOL, CURRENT_STRATEGY, e.getMessage());
         }
     }
