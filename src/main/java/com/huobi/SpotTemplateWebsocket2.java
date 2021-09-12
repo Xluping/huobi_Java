@@ -385,8 +385,7 @@ public class SpotTemplateWebsocket2 implements Job {
                     }
                     clock.stop();
                     long executeTime = clock.getTime();
-                    logger.info("====== symbol: {}, currentPrice: {}, direction: {}, executeTime: {}ms", SYMBOL, latestPrice, marketTrade.getDirection(), executeTime);
-
+                    logger.info("symbol: {}, currentPrice: {}, direction: {}, executeTime: {}ms", SYMBOL, latestPrice, marketTrade.getDirection(), executeTime);
                 });
             });
         } catch (SDKException e) {
