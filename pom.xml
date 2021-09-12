@@ -134,7 +134,7 @@
                             <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.SpotTemplate1</mainClass>
+                                    <mainClass>com.huobi.SpotTemplateWebsocket1</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -153,7 +153,7 @@
                             <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.SpotTemplate2</mainClass>
+                                    <mainClass>com.huobi.SpotTemplateWebsocket2</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
@@ -172,7 +172,7 @@
                             <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.huobi.SpotTemplate3</mainClass>
+                                    <mainClass>com.huobi.SpotTemplateWebsocket3</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
