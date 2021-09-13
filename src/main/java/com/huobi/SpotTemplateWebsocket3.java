@@ -81,7 +81,7 @@ public class SpotTemplateWebsocket3 implements Job {
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         // 5分钟一次
-        jobManagement.addJob("50 0/5 * * *  ?", SpotTemplateWebsocket3.class, SYMBOL);
+        jobManagement.addJob("46 0/5 * * *  ?", SpotTemplateWebsocket3.class, SYMBOL);
         jobManagement.startJob();
 
     }
@@ -462,35 +462,38 @@ public class SpotTemplateWebsocket3 implements Job {
             String clientId = entry.getKey();
             boolean isLimit = true;
             Order buyOrder = HuobiUtil.getOrderByClientId(clientId);
-
-            if (!clientId.contains(spot.getSymbol())) {
-                //buy market
-                isLimit = false;
-            }
-
-
-            if ("filled".equalsIgnoreCase(buyOrder.getState().trim())) {
-                balanceChanged = true;
-                logger.error("====== {}-{}-checkOrderStatus-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
-                BigDecimal buyAmount = buyOrder.getFilledAmount();
-                // TODO xlp 9/7/21 11:01 AM  :  matchresults 接口获取准确值
-                BigDecimal buyAtPrice;
-                if (isLimit) {
-                    buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
-                    StrategyCommon.setFee(buyAtPrice.multiply(buyAmount));
-                } else {
-                    buyAtPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
-                    StrategyCommon.setFee(buyAmount);
+            if (buyOrder != null) {
+                if (!clientId.contains(spot.getSymbol())) {
+                    //buy market
+                    isLimit = false;
                 }
-                buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                StrategyCommon.sell(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount, 1);
-                orderCount.incrementAndGet();
-                buyIterator.remove();
-            } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
-                balanceChanged = true;
-                logger.error("====== {}-{}-checkOrderStatus-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
-                orderCount.decrementAndGet();
+
+                if ("filled".equalsIgnoreCase(buyOrder.getState().trim())) {
+                    balanceChanged = true;
+                    logger.error("====== {}-{}-checkOrderStatus-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
+                    BigDecimal buyAmount = buyOrder.getFilledAmount();
+                    // TODO xlp 9/7/21 11:01 AM  : 市场价下单时, Order 里 price =0
+                    BigDecimal buyAtPrice;
+                    if (isLimit) {
+                        buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
+                        StrategyCommon.setFee(buyAtPrice.multiply(buyAmount));
+                    } else {
+                        buyAtPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
+                        StrategyCommon.setFee(buyAmount);
+                    }
+                    buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+                    StrategyCommon.sell(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount, 1);
+                    orderCount.incrementAndGet();
+                    buyIterator.remove();
+                } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
+                    balanceChanged = true;
+                    logger.error("====== {}-{}-checkOrderStatus-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
+                    orderCount.decrementAndGet();
+                    buyIterator.remove();
+                }
+            } else {
                 buyIterator.remove();
             }
 
@@ -500,22 +503,26 @@ public class SpotTemplateWebsocket3 implements Job {
             Map.Entry<String, BigDecimal> entry = sellIterator.next();
             String orderId = entry.getKey();
             Order sellOrder = HuobiUtil.getOrderByClientId(orderId);
-            if ("filled".equalsIgnoreCase(sellOrder.getState().trim())) {
-                balanceChanged = true;
-                StrategyCommon.setProfit(sellOrder.getFilledAmount().multiply(sellOrder.getPrice()));
-                logger.error("====== {}-{}-checkOrderStatus-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
-                orderCount.decrementAndGet();
-                sellIterator.remove();
-            } else if ("canceled".equalsIgnoreCase(sellOrder.getState().trim())) {
-                logger.error("====== {}-{}-checkOrderStatus-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
-                orderCount.incrementAndGet();
-                sellIterator.remove();
-            }
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                logger.error("====== SpotTemplateWebsocket1-checkOrderStatus: {} ======", e.getMessage());
+            if (sellOrder != null) {
+                if ("filled".equalsIgnoreCase(sellOrder.getState().trim())) {
+                    balanceChanged = true;
+                    StrategyCommon.setProfit(sellOrder.getFilledAmount().multiply(sellOrder.getPrice()));
+                    logger.error("====== {}-{}-checkOrderStatus-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
+                    orderCount.decrementAndGet();
+                    sellIterator.remove();
+                } else if ("canceled".equalsIgnoreCase(sellOrder.getState().trim())) {
+                    logger.error("====== {}-{}-checkOrderStatus-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
+                    orderCount.incrementAndGet();
+                    sellIterator.remove();
+                }
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    logger.error("====== SpotTemplateWebsocket1-checkOrderStatus: {} ======", e.getMessage());
 
+                }
+            } else {
+                sellIterator.remove();
             }
         }
 

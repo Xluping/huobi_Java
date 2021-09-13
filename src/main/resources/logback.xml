@@ -79,8 +79,8 @@
     <!-- 配置好前面对应的appender -->
     <root level="STDOUT">
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="INFO-OUT"/>
         <appender-ref ref="DEBUG-OUT"/>
+        <appender-ref ref="INFO-OUT"/>
         <appender-ref ref="ERROR-OUT"/>
         <appender-ref ref="FILE-OUT"/>
     </root>
