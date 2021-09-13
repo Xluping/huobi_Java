@@ -229,8 +229,14 @@ public class HuobiUtil {
      * @return
      */
     public static Order getOrderByClientId(String clientOrderId) {
-        Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
-        return order;
+        try {
+            Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
+            return order;
+
+        } catch (Exception e) {
+            // 避免各种原因下单错误, 导致整体逻辑异常
+            return null;
+        }
     }
 
     /**
