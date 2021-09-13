@@ -473,13 +473,13 @@ public class SpotTemplateWebsocket1 implements Job {
                 balanceChanged = true;
                 logger.error("====== {}-{}-checkOrderStatus-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
                 BigDecimal buyAmount = buyOrder.getFilledAmount();
-                // TODO xlp 9/7/21 11:01 AM  :  matchresults 接口获取准确值
+                // TODO xlp 9/7/21 11:01 AM  : 市场价下单时, Order 里 price =0
                 BigDecimal buyAtPrice;
                 if (isLimit) {
                     buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
                     StrategyCommon.setFee(buyAtPrice.multiply(buyAmount));
                 } else {
-                    buyAtPrice = latestPrice;
+                    buyAtPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
                     StrategyCommon.setFee(buyAmount);
                 }
                 buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
