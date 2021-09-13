@@ -1,10 +1,7 @@
 package com.huobi;
 
-import com.huobi.client.MarketClient;
-import com.huobi.client.TradeClient;
 import com.huobi.client.req.market.SubMarketTradeRequest;
 import com.huobi.client.req.trade.SubOrderUpdateV2Request;
-import com.huobi.constant.HuobiOptions;
 import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.exception.SDKException;
 import com.huobi.model.generic.Symbol;
@@ -60,7 +57,6 @@ public class SpotTemplateWebsocket1 implements Job {
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
     private static final Logger logger = LoggerFactory.getLogger(SpotTemplateWebsocket1.class);
-    private static final ConcurrentHashMap<String, BigDecimal> previousSellOrderMap = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
         BASE_CURRENCY = args[0];
@@ -84,8 +80,8 @@ public class SpotTemplateWebsocket1 implements Job {
         SpotTemplateWebsocket1 spotBuyer = new SpotTemplateWebsocket1();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
-        // 两分钟一次
-        jobManagement.addJob("0 0/2 * * * ?", SpotTemplateWebsocket1.class, SYMBOL);
+        // 5分钟一次
+        jobManagement.addJob("15 0/5 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
         jobManagement.startJob();
 
     }
@@ -242,12 +238,6 @@ public class SpotTemplateWebsocket1 implements Job {
 
         List<Order> sellOrders = HuobiUtil.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
         logger.error("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrders.size());
-        sellOrders.forEach(order -> {
-            if ("api".equalsIgnoreCase(order.getSource())) {
-                previousSellOrderMap.putIfAbsent(String.valueOf(order.getId()), order.getAmount());
-            }
-        });
-        logger.error("====== {}-{}-launch: 现有 api 卖单 {} 个  ======", SYMBOL, currentStrategy, previousSellOrderMap.size());
     }
 
 
@@ -257,8 +247,7 @@ public class SpotTemplateWebsocket1 implements Job {
      */
     public void priceListener() {
         try {
-            MarketClient marketClient = MarketClient.create(new HuobiOptions());
-            marketClient.subMarketTrade(SubMarketTradeRequest.builder().symbol(SYMBOL).build(), (marketTradeEvent) -> {
+            CurrentAPI.getApiInstance().getMarketClient().subMarketTrade(SubMarketTradeRequest.builder().symbol(SYMBOL).build(), (marketTradeEvent) -> {
                 marketTradeEvent.getList().forEach(marketTrade -> {
                     StopWatch clock = new StopWatch();
                     clock.start(); // 计时开始
@@ -398,17 +387,15 @@ public class SpotTemplateWebsocket1 implements Job {
      * 监听订单状态
      */
     public void orderListener() {
-        TradeClient tradeService = TradeClient.create(HuobiOptions.builder()
-                .apiKey(Constants.API_KEY)
-                .secretKey(Constants.SECRET_KEY)
-                .build());
-        tradeService.subOrderUpdateV2(SubOrderUpdateV2Request.builder().symbols(SYMBOL).build(), orderUpdateV2Event -> {
+        CurrentAPI.getApiInstance().getTradeClient().subOrderUpdateV2(SubOrderUpdateV2Request.builder().symbols(SYMBOL).build(), orderUpdateV2Event -> {
 //            System.out.println(" -- SpotTemplateWebsocket1.orderListener -- " + orderUpdateV2Event.toString());
             ConcurrentHashMap<String, BigDecimal> buyOrderMap = StrategyCommon.getBuyOrderMap();
             ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
             OrderUpdateV2 order = orderUpdateV2Event.getOrderUpdate();
             String clientOrderId = order.getClientOrderId();
             Long orderId = order.getOrderId();
+
+
             // 确保多个策略的订单不会互相影响
             if (buyOrderMap.containsKey(clientOrderId)
                     || sellOrderMap.containsKey(clientOrderId)
@@ -450,7 +437,6 @@ public class SpotTemplateWebsocket1 implements Job {
                             sellOrderMap.remove(String.valueOf(orderId));
                         }
                         logger.error("====== SpotTemplateWebsocket1-orderListener: 现有卖单 {} 个 ======", sellOrderMap.size());
-                        logger.error("====== SpotTemplateWebsocket1-orderListener: 之前卖单 {} 个 ======", previousSellOrderMap.size());
 
                     }
 
@@ -471,7 +457,6 @@ public class SpotTemplateWebsocket1 implements Job {
         Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> buyIterator = buyOrderMap.entrySet().iterator();
         Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> sellIterator = sellOrderMap.entrySet().iterator();
         // TODO xlp 9/12/21 4:37 AM  : * 每个API Key 在1秒之内限制10次  * 若接口不需要API Key，则每个IP在1秒内限制10次
-        int requestLimitNum = 0;
         while (buyIterator.hasNext()) {
             Map.Entry<String, BigDecimal> entry = buyIterator.next();
             String clientId = entry.getKey();
@@ -511,11 +496,10 @@ public class SpotTemplateWebsocket1 implements Job {
 
         }
 
-        while (sellIterator.hasNext() && requestLimitNum < 5) {
+        while (sellIterator.hasNext()) {
             Map.Entry<String, BigDecimal> entry = sellIterator.next();
             String orderId = entry.getKey();
             Order sellOrder = HuobiUtil.getOrderByClientId(orderId);
-
             if ("filled".equalsIgnoreCase(sellOrder.getState().trim())) {
                 balanceChanged = true;
                 StrategyCommon.setProfit(sellOrder.getFilledAmount().multiply(sellOrder.getPrice()));
@@ -527,8 +511,12 @@ public class SpotTemplateWebsocket1 implements Job {
                 orderCount.incrementAndGet();
                 sellIterator.remove();
             }
-            requestLimitNum++;
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                logger.error("====== SpotTemplateWebsocket1-checkOrderStatus: {} ======", e.getMessage());
 
+            }
         }
 
     }
