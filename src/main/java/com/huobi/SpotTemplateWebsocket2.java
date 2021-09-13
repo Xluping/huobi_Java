@@ -479,7 +479,7 @@ public class SpotTemplateWebsocket2 implements Job {
                     buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
                     StrategyCommon.setFee(buyAtPrice.multiply(buyAmount));
                 } else {
-                    buyAtPrice = latestPrice;
+                    buyAtPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
                     StrategyCommon.setFee(buyAmount);
                 }
                 buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
