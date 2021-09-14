@@ -5,3 +5,5 @@ target
 *.tmp
 src/test/
 src/main/java/com/huobi/constant/Constants.java
+.DS_Store
+src/main/java/com/huobi/Constants.java
