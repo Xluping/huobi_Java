@@ -7,12 +7,14 @@ import com.huobi.constant.enums.OrderSideEnum;
 import com.huobi.model.account.Account;
 import com.huobi.model.account.AccountBalance;
 import com.huobi.model.account.Balance;
+import com.huobi.model.generic.Symbol;
 import com.huobi.model.market.MarketTrade;
 import com.huobi.model.trade.Order;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,12 +50,11 @@ public class HuobiUtil {
      * 根据账户 ID 查询账户余额
      *
      * @param accountId
-     * @param baseCurrency
      * @param quotaCurrency 交易对
      * @return 返回账户余额
      */
-    public static BigDecimal getBalanceByAccountId(Long accountId, String baseCurrency, String quotaCurrency) {
-        AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
+    public static BigDecimal getQuotaBalanceByAccountId(Long accountId, String quotaCurrency) {
+        AtomicReference<BigDecimal> bal = new AtomicReference<>(BigDecimal.ZERO);
         AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
@@ -110,7 +111,7 @@ public class HuobiUtil {
      * @param accountId
      */
     public static BigDecimal getBalanceByAccountId(Long accountId) {
-        AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
+        AtomicReference<BigDecimal> bal = new AtomicReference<>(BigDecimal.ZERO);
 
         AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
@@ -255,4 +256,28 @@ public class HuobiUtil {
         return orderList;
     }
 
+    /**
+     *
+     */
+    public static ArrayList<Spot> getAllAvailableSymbols(Long accountId) {
+        ArrayList<Spot> list = new ArrayList<>();
+        List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
+        symbolList.forEach(symbol -> {
+            Spot spot = new Spot();
+            spot.setAccountId(accountId);
+            spot.setBaseCurrency(symbol.getBaseCurrency());
+            spot.setQuoteCurrency(symbol.getQuoteCurrency());
+            spot.setSymbol(symbol.getSymbol());
+            spot.setSellMarketMinOrderAmt(symbol.getSellMarketMinOrderAmt());
+            spot.setLimitOrderMinOrderAmt(symbol.getLimitOrderMinOrderAmt());
+            spot.setMinOrderValue(symbol.getMinOrderValue());
+            spot.setPricePrecision(symbol.getPricePrecision());
+            spot.setAmountPrecision(symbol.getAmountPrecision());
+            list.add(spot);
+        });
+
+        logger.error("====== HuobiUtil-getAllAvailableSymbols:  state=online  list.size= {}======", list.size());
+
+        return list;
+    }
 }

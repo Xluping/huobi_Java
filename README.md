@@ -49,6 +49,9 @@ root/<br>
 <li>11.  
 本地运行: nohup java -jar spot-jar-with-dependencies.jar spot usdt
 server 运行:<br>
-    1. upload spot-jar-with-dependencies.jar to /root/ <br>
-    2. sh cp.sh <br>
-    3. if  huobi-command-util.jar is not running, start it: (alias  startutil) <br>
+    1. stopall
+    2. upload spot-jar-with-dependencies.jar to /root/ <br>
+    3. sh cp.sh <br>
+    4. if  huobi-command-util.jar is not running, start it: (alias  startutil) <br>
+    
+<li> //todo: websocket 获得最新价格,放到kafka上, spot1 spot2 ... 进行消费

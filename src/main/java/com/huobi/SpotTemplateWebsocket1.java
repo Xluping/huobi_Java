@@ -81,7 +81,10 @@ public class SpotTemplateWebsocket1 implements Job {
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         // 5分钟一次
-        jobManagement.addJob("12 0/3 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
+        jobManagement.addJob("10 0/1 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
+//        jobManagement.addJob("20 0/2 * * *  ?", SpotTemplateWebsocket2.class, SYMBOL);
+//        jobManagement.addJob("30 0/3 * * *  ?", SpotTemplateWebsocket3.class, SYMBOL);
+
         jobManagement.startJob();
 
     }
@@ -91,10 +94,13 @@ public class SpotTemplateWebsocket1 implements Job {
      */
     public void init() {
         try {
+            prepareSpot(totalBalance, CURRENT_STRATEGY);
+
+            //订单状态监听
             orderListener();
             Thread.sleep(3000);
+
             totalBalance = new BigDecimal(PORTION);
-            prepareSpot(totalBalance, CURRENT_STRATEGY);
             HuobiUtil.cancelOpenOrders(spotAccountId, SYMBOL, CURRENT_STRATEGY, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
             launch(CURRENT_STRATEGY);
@@ -125,7 +131,7 @@ public class SpotTemplateWebsocket1 implements Job {
         pointAccountId = HuobiUtil.getAccountIdByType("point");
         spot.setAccountId(spotAccountId);
 
-        usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+        usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         logger.error("{}-{}-prepareSpot: 分配到的仓位: {} ======", SYMBOL, currentStrategy, PORTION);
         spot.setTotalBalance(totalBalance);
         BigDecimal highBalance;
@@ -228,7 +234,7 @@ public class SpotTemplateWebsocket1 implements Job {
         logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, currentStrategy, spot);
         logger.error("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
         StrategyCommon.calculateBuyPriceList(currentStrategy, latestPrice, spot.getPricePrecision());
-        usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+        usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buy(currentStrategy, spot, latestPrice, spot.getPortionHigh(), 2);
@@ -297,10 +303,7 @@ public class SpotTemplateWebsocket1 implements Job {
                         }
                         orderCount.set(-1);
                     }
-                    if (balanceChanged) { //订单成交后,更新余额
-                        usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
-                        balanceChanged = false;
-                    }
+
 
                     //检测是否需要下单
                     ArrayList<BigDecimal> priceList = StrategyCommon.getPriceList();
@@ -365,7 +368,7 @@ public class SpotTemplateWebsocket1 implements Job {
                                 ticker.getAndAdd(1);
                                 if (ticker.get() % 30 == 0) {
                                     ticker.getAndSet(1);
-                                    usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+                                    usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
                                     logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
                                 }
                             }
@@ -442,6 +445,10 @@ public class SpotTemplateWebsocket1 implements Job {
 
                 }
 
+            }
+            if (balanceChanged) { //订单成交后,更新余额
+                usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
+                balanceChanged = false;
             }
 
 
@@ -532,4 +539,6 @@ public class SpotTemplateWebsocket1 implements Job {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         checkOrderStatus();
     }
+
+
 }
