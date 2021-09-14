@@ -5,14 +5,14 @@ import java.math.BigDecimal;
 public class Constants {
     // local  无 ip
     public static final String API_KEY = "715db1e0-ur2fg6h2gf-b2d647f3-e6904";
-    public static final String SECRET_KEY = "bcee29fc-b6435660-649ced5b-81883";
+    public static final String SECRET_KEY = "";
 
     //server    绑定 IP
 //    public static final String API_KEY = "cbcbf07e-6c66e380-vf25treb80-6c28c";
-//    public static final String SECRET_KEY = "174faf1e-e885ac5e-1ce9aa8d-8f6e5";
+//    public static final String SECRET_KEY = "";
 
     // wechat pusher
-    public static final String WX_PUSHER_TOKEN = "AT_RQ1xF00Lq69TkYNn0dC8DC8U6wM0vvaP";
+    public static final String WX_PUSHER_TOKEN = "";
     public static final String WX_PUSHER_URL = "http://wxpusher.zjiecode.com/api/send/message";
 
 
