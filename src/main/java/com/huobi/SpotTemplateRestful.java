@@ -84,7 +84,7 @@ public class SpotTemplateRestful implements Job {
         try {
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
-            HuobiUtil.cancelOpenOrders(spotAccountId, SYMBOL, CURRENT_STRATEGY, OrderSideEnum.BUY);
+            StrategyCommon.cancelOpenOrders(spotAccountId, SYMBOL, CURRENT_STRATEGY, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
             launch(CURRENT_STRATEGY);
         } catch (Exception exception) {
@@ -95,10 +95,14 @@ public class SpotTemplateRestful implements Job {
 
     @Synchronized
     public void prepareSpot(BigDecimal totalBalance, int currentStrategy) {
-        latestPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
+        latestPrice = StrategyCommon.getCurrentTradPrice(SYMBOL);
         spot.setStartPrice(latestPrice);
-        spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
-        spot.setTriplePrice(latestPrice.multiply(new BigDecimal("3")));
+        if (spot.getDoublePrice() == null) {
+            spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
+        }
+        if (spot.getTriplePrice() == null) {
+            spot.setTriplePrice(latestPrice.multiply(new BigDecimal("3")));
+        }
         spot.setBaseCurrency(BASE_CURRENCY);
         spot.setQuoteCurrency(QUOTE_CURRENCY);
         spot.setSymbol(SYMBOL);
@@ -114,11 +118,11 @@ public class SpotTemplateRestful implements Job {
             }
         });
 
-        spotAccountId = HuobiUtil.getAccountIdByType("spot");
-        pointAccountId = HuobiUtil.getAccountIdByType("point");
+        spotAccountId = StrategyCommon.getAccountIdByType("spot");
+        pointAccountId = StrategyCommon.getAccountIdByType("point");
         spot.setAccountId(spotAccountId);
 
-        usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
+        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         logger.error("{}-{}-prepareSpot: 分配到的仓位: {} ======", SYMBOL, currentStrategy, PORTION);
         spot.setTotalBalance(totalBalance);
         BigDecimal highBalance;
@@ -138,14 +142,11 @@ public class SpotTemplateRestful implements Job {
                 lowBalance = totalBalance.multiply(new BigDecimal(Constants.LOW_RATIO_2.toString()));
                 lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_2)), RoundingMode.HALF_UP);
-                portionHigh = portionHigh.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_2)), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_2)), RoundingMode.HALF_UP);
-                portionMedium = portionMedium.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_2)), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_2)), RoundingMode.HALF_UP);
-                portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_2)), spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_2;
                 mediumCount = Constants.MEDIUM_COUNT_2;
                 lowCount = Constants.LOW_COUNT_2;
@@ -159,14 +160,12 @@ public class SpotTemplateRestful implements Job {
                 lowBalance = totalBalance.multiply(new BigDecimal(Constants.LOW_RATIO_3.toString()));
                 lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_3)), RoundingMode.HALF_UP);
-                portionHigh = portionHigh.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_3)), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_3)), RoundingMode.HALF_UP);
-                portionMedium = portionMedium.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_3)), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_3)), RoundingMode.HALF_UP);
-                portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_3)), spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_3;
                 mediumCount = Constants.MEDIUM_COUNT_3;
                 lowCount = Constants.LOW_COUNT_3;
@@ -180,14 +179,11 @@ public class SpotTemplateRestful implements Job {
                 lowBalance = totalBalance.multiply(new BigDecimal(Constants.LOW_RATIO_1.toString()));
                 lowBalance = lowBalance.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_1)), RoundingMode.HALF_UP);
-                portionHigh = portionHigh.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionHigh = highBalance.divide(new BigDecimal(String.valueOf(Constants.HIGH_COUNT_1)), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_1)), RoundingMode.HALF_UP);
-                portionMedium = portionMedium.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionMedium = mediumBalance.divide(new BigDecimal(String.valueOf(Constants.MEDIUM_COUNT_1)), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
-                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_1)), RoundingMode.HALF_UP);
-                portionLow = portionLow.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+                portionLow = lowBalance.divide(new BigDecimal(String.valueOf(Constants.LOW_COUNT_1)), spot.getPricePrecision(), RoundingMode.HALF_UP);
                 highCount = Constants.HIGH_COUNT_1;
                 mediumCount = Constants.MEDIUM_COUNT_1;
                 lowCount = Constants.LOW_COUNT_1;
@@ -218,10 +214,10 @@ public class SpotTemplateRestful implements Job {
     public void launch(int currentStrategy) {
         StrategyCommon.resetFeeAndProfit(SYMBOL, currentStrategy);
         logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, currentStrategy, spot);
-        latestPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
+        latestPrice = StrategyCommon.getCurrentTradPrice(spot.getSymbol());
         logger.error("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
         StrategyCommon.calculateBuyPriceList(currentStrategy, latestPrice, spot.getPricePrecision());
-        usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
+        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buy(currentStrategy, spot, latestPrice, spot.getPortionHigh(), 2);
@@ -229,7 +225,7 @@ public class SpotTemplateRestful implements Job {
             logger.error("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, currentStrategy, usdtBalance.toString());
         }
 //        ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
-//        List<Order> sellOrders = HuobiUtil.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
+//        List<Order> sellOrders = StrategyCommon.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
 //        logger.error("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrders.size());
 ////        sellOrders.forEach(order -> {
 ////            if ("api".equalsIgnoreCase(order.getSource())) {
@@ -251,10 +247,10 @@ public class SpotTemplateRestful implements Job {
     @Synchronized
     public void priceListener() {
         try {
-            latestPrice = HuobiUtil.getCurrentTradPrice(SYMBOL);
+            latestPrice = StrategyCommon.getCurrentTradPrice(SYMBOL);
             //价格三倍,WeChat提示并退出
             if (latestPrice.compareTo(spot.getTriplePrice()) >= 0) {
-                HuobiUtil.weChatPusher(CURRENT_STRATEGY, "价格三倍,退出", 2);
+                StrategyCommon.weChatPusher(CURRENT_STRATEGY, "价格三倍,退出", 2);
                 System.exit(0);
             }
             // 价格翻倍,策略提档
@@ -263,39 +259,40 @@ public class SpotTemplateRestful implements Job {
                 if (CURRENT_STRATEGY < 3) {
                     // 提升一档, 高频变成稳健, 稳健变成保守, 保守直接退出
                     CURRENT_STRATEGY += 1;
-                    prepareSpot(totalBalance.divide(new BigDecimal("2"), RoundingMode.HALF_DOWN), CURRENT_STRATEGY);
+                    prepareSpot(totalBalance.divide(new BigDecimal("2"), spot.getPricePrecision(), RoundingMode.HALF_DOWN), CURRENT_STRATEGY);
                     launch(CURRENT_STRATEGY);
-                    HuobiUtil.weChatPusher(CURRENT_STRATEGY, SYMBOL + " 价格翻倍,策略提档", 2);
+                    StrategyCommon.weChatPusher(CURRENT_STRATEGY, SYMBOL + " 价格翻倍,策略提档", 2);
 
                 }
             }
             // 处理之前的买单,卖单
-            ConcurrentHashMap<String, BigDecimal> buyOrderMap = StrategyCommon.getBuyOrderMap();
-            ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
-            Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> buyIterator = buyOrderMap.entrySet().iterator();
-            Iterator<ConcurrentHashMap.Entry<String, BigDecimal>> sellIterator = sellOrderMap.entrySet().iterator();
+            ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
+            ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
+            Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
+            Iterator<ConcurrentHashMap.Entry<String, Spot>> sellIterator = sellOrderMap.entrySet().iterator();
             // TODO xlp 9/12/21 4:37 AM  : * 每个API Key 在1秒之内限制10次  * 若接口不需要API Key，则每个IP在1秒内限制10次
             // TODO xlp 9/12/21 4:37 AM  :  当卖单超过 10 个, 超频
             int requestLimitNum = 0;
             while (buyIterator.hasNext()) {
-                Map.Entry<String, BigDecimal> entry = buyIterator.next();
+                Map.Entry<String, Spot> entry = buyIterator.next();
                 String clientId = entry.getKey();
                 Order buyOrder;
                 boolean isLimit = true;
                 BigDecimal buyPrice;
                 if (clientId.contains(spot.getSymbol())) {
                     //buy limit
-                    buyOrder = HuobiUtil.getOrderByClientId(clientId);
+                    buyOrder = StrategyCommon.getOrderByClientId(clientId);
+                    assert buyOrder != null;
                     buyPrice = buyOrder.getPrice();
                 } else {
                     //buy market
                     isLimit = false;
-                    buyOrder = HuobiUtil.getOrderByOrderId(Long.parseLong(clientId));
+                    buyOrder = StrategyCommon.getOrderByOrderId(Long.parseLong(clientId));
                     buyPrice = latestPrice;
                 }
 
 
-                if ("filled".equalsIgnoreCase(buyOrder.getState().trim())) {
+                if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
                     balanceChanged = true;
                     logger.error("====== {}-{}-priceListener-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
                     BigDecimal buyAmount = buyOrder.getFilledAmount();
@@ -318,7 +315,7 @@ public class SpotTemplateRestful implements Job {
 
                     orderCount.incrementAndGet();
                     buyIterator.remove();
-                } else if ("canceled".equalsIgnoreCase(buyOrder.getState().trim())) {
+                } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
                     balanceChanged = true;
                     logger.error("====== {}-{}-priceListener-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
                     orderCount.decrementAndGet();
@@ -328,11 +325,12 @@ public class SpotTemplateRestful implements Job {
             }
 
             while (sellIterator.hasNext() && requestLimitNum < 3) {
-                Map.Entry<String, BigDecimal> entry = sellIterator.next();
+                Map.Entry<String, Spot> entry = sellIterator.next();
                 String orderId = entry.getKey();
-                Order sellOrder = HuobiUtil.getOrderByClientId(orderId);
+                Order sellOrder = StrategyCommon.getOrderByClientId(orderId);
 
-                if ("filled".equalsIgnoreCase(sellOrder.getState().trim())) {
+                assert sellOrder != null;
+                if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
                     balanceChanged = true;
 
                     logger.error("====== {}-{}-priceListener-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
@@ -344,7 +342,7 @@ public class SpotTemplateRestful implements Job {
                     StrategyCommon.setFee(sellOrder.getFilledFees());
                     orderCount.decrementAndGet();
                     sellIterator.remove();
-                } else if ("canceled".equalsIgnoreCase(sellOrder.getState().trim())) {
+                } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
                     logger.error("====== {}-{}-priceListener-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
                     orderCount.incrementAndGet();
                     sellIterator.remove();
@@ -358,29 +356,30 @@ public class SpotTemplateRestful implements Job {
             // 启动时,余额不足 不执行此逻辑, insufficientFound=true
             if (sellOrderMap.size() == 0 && !insufficientFound) {
                 logger.error("====== {}-{}-priceListener-开始清理残余买单.======", SYMBOL, CURRENT_STRATEGY);
-                Iterator<Map.Entry<String, BigDecimal>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
+                Iterator<Map.Entry<String, Spot>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
 
                 while (iterator.hasNext()) {
-                    Map.Entry<String, BigDecimal> entry = iterator.next();
+                    Map.Entry<String, Spot> entry = iterator.next();
                     String clientId = entry.getKey();
-                    Order remainOrder = HuobiUtil.getOrderByClientId(clientId);
+                    Order remainOrder = StrategyCommon.getOrderByClientId(clientId);
+                    assert remainOrder != null;
                     logger.error("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
-                    HuobiUtil.cancelOrder(CURRENT_STRATEGY, clientId);
+                    StrategyCommon.cancelOrder(CURRENT_STRATEGY, clientId);
                     iterator.remove();
                 }
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
-                BigDecimal pointBalance = HuobiUtil.getBalanceByAccountId(pointAccountId);
+                BigDecimal pointBalance = StrategyCommon.getBalanceByAccountId(pointAccountId);
                 if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
 
                     String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
                             " 点卡余额: " + pointBalance.toString();
-                    HuobiUtil.weChatPusher(CURRENT_STRATEGY, sb, 2);
+                    StrategyCommon.weChatPusher(CURRENT_STRATEGY, sb, 2);
                 }
                 orderCount.set(-1);
             }
             if (balanceChanged) { //订单成交后,更新余额
-                usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
+                usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
                 balanceChanged = false;
             }
 
@@ -409,37 +408,37 @@ public class SpotTemplateRestful implements Job {
                     BigDecimal usdtPortion = new BigDecimal("10");
                     if (CURRENT_STRATEGY == 1) {
                         if ("high".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_1), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_1), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         } else if ("medium".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_1), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_1), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         } else if ("low".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_1), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_1), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         }
                     }
                     if (CURRENT_STRATEGY == 2) {
                         if ("high".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_2), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_2), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         } else if ("medium".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_2), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_2), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         } else if ("low".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_2), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_2), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         }
                     }
                     if (CURRENT_STRATEGY == 3) {
                         if ("high".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_3), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.HIGH_COUNT_3), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         } else if ("medium".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_3), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.MEDIUM_COUNT_3), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         } else if ("low".equalsIgnoreCase(level)) {
-                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_3), RoundingMode.HALF_UP);
+                            usdtPortion = spot.getHighStrategyBalance().divide(new BigDecimal(Constants.LOW_COUNT_3), spot.getPricePrecision(), RoundingMode.HALF_UP);
 
                         }
                     }
@@ -453,7 +452,7 @@ public class SpotTemplateRestful implements Job {
                         ticker.getAndAdd(1);
                         if (ticker.get() % 30 == 0) {
                             ticker.getAndSet(1);
-                            usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
+                            usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
                             logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
                         }
                     }

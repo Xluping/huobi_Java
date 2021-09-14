@@ -25,7 +25,7 @@ public class StrategyCommonTest {
 
     @Before
     public void setUp() throws Exception {
-        accountId = HuobiUtil.getAccountIdByType("spot");
+        accountId = StrategyCommon.getAccountIdByType("spot");
 
     }
 
@@ -52,7 +52,7 @@ public class StrategyCommonTest {
 
 
             String symbol = "aaveusdt";
-            BigDecimal buyPrice = HuobiUtil.getCurrentTradPrice(symbol);
+            BigDecimal buyPrice = StrategyCommon.getCurrentTradPrice(symbol);
             String clientOrderId = "LUPING" + System.nanoTime();
 
             CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(accountId, clientOrderId, symbol, buyPrice, new BigDecimal("0.001"));
