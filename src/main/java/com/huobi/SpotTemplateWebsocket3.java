@@ -32,13 +32,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * 高频
  */
-public class SpotTemplateWebsocket1 implements Job {
+public class SpotTemplateWebsocket3 implements Job {
     private static String BASE_CURRENCY = "";
     private static final String QUOTE_CURRENCY = "usdt";
     private static String SYMBOL;
     private static String PORTION;
     // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改 CURRENT_STRATEGY
-    private static int CURRENT_STRATEGY = 1;
+    private static int CURRENT_STRATEGY = 3;
 
 
     private static Long spotAccountId = 14086863L;
@@ -55,7 +55,7 @@ public class SpotTemplateWebsocket1 implements Job {
     private static volatile BigDecimal latestPrice;
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
-    private static final Logger logger = LoggerFactory.getLogger(SpotTemplateWebsocket1.class);
+    private static final Logger logger = LoggerFactory.getLogger(SpotTemplateWebsocket3.class);
 
     public static void main(String[] args) {
         BASE_CURRENCY = args[0];
@@ -76,13 +76,13 @@ public class SpotTemplateWebsocket1 implements Job {
         logger.error("====== main:  PORTION = {} ======", PORTION);
         logger.error("====== main:  STRATEGY = {} ======", CURRENT_STRATEGY);
 
-        SpotTemplateWebsocket1 spotBuyer = new SpotTemplateWebsocket1();
+        SpotTemplateWebsocket3 spotBuyer = new SpotTemplateWebsocket3();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改
-        jobManagement.addJob("10 0/1 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
+//        jobManagement.addJob("10 0/1 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
 //        jobManagement.addJob("20 0/2 * * *  ?", SpotTemplateWebsocket2.class, SYMBOL);
-//        jobManagement.addJob("30 0/3 * * *  ?", SpotTemplateWebsocket3.class, SYMBOL);
+        jobManagement.addJob("30 0/3 * * *  ?", SpotTemplateWebsocket3.class, SYMBOL);
 
         jobManagement.startJob();
 

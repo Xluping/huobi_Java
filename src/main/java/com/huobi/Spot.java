@@ -13,16 +13,16 @@ import java.math.BigDecimal;
  */
 @Data
 public class Spot {
+    /**
+     * 策略相关的属性
+     */
     // BTC/USDT
     private Long accountId;
     private String symbol;
     private String baseCurrency; // BTC
     private String quoteCurrency;// USDT
-    private BigDecimal startPrice;
     private BigDecimal doublePrice;
     private BigDecimal triplePrice;
-    private int pricePrecision;
-    private int amountPrecision;
     private BigDecimal totalBalance;// 分配到的总仓位  5:3:2
     private BigDecimal highStrategyBalance; // 高频总仓位
     private BigDecimal mediumStrategyBalance; // 稳健总仓位
@@ -30,9 +30,18 @@ public class Spot {
     private BigDecimal portionHigh;  // 高频每次补仓的仓位
     private BigDecimal portionMedium;// 稳健每次补仓的仓位
     private BigDecimal portionLow;  // 保守每次补仓的仓位
+
+
+    /**
+     * 下单相关的属性
+     */
+    private BigDecimal startPrice;
+    private BigDecimal orderValue;
+    private BigDecimal orderAmount;
+    private int pricePrecision;
+    private int amountPrecision;
     private BigDecimal limitOrderMinOrderAmt; //限价单最小下单量 ，以基础币种为单位
     private BigDecimal sellMarketMinOrderAmt; // 市价卖单 最小下单量，以基础币种为单位
     private BigDecimal minOrderValue; //交易对限价单和市价买单最小下单金额 ，以计价币种为单位
-    private int strategyOffset; // 策略分配: 高频 0-20%  稳健 20-50% 保守 50%+
-    private int orderOffset; // 下单间隔
+    private BigDecimal stopPrice; //止盈价格
 }
