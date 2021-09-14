@@ -118,7 +118,7 @@ public class SpotTemplateRestful implements Job {
         pointAccountId = HuobiUtil.getAccountIdByType("point");
         spot.setAccountId(spotAccountId);
 
-        usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+        usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         logger.error("{}-{}-prepareSpot: 分配到的仓位: {} ======", SYMBOL, currentStrategy, PORTION);
         spot.setTotalBalance(totalBalance);
         BigDecimal highBalance;
@@ -221,7 +221,7 @@ public class SpotTemplateRestful implements Job {
         latestPrice = HuobiUtil.getCurrentTradPrice(spot.getSymbol());
         logger.error("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
         StrategyCommon.calculateBuyPriceList(currentStrategy, latestPrice, spot.getPricePrecision());
-        usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+        usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buy(currentStrategy, spot, latestPrice, spot.getPortionHigh(), 2);
@@ -380,7 +380,7 @@ public class SpotTemplateRestful implements Job {
                 orderCount.set(-1);
             }
             if (balanceChanged) { //订单成交后,更新余额
-                usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+                usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
                 balanceChanged = false;
             }
 
@@ -453,7 +453,7 @@ public class SpotTemplateRestful implements Job {
                         ticker.getAndAdd(1);
                         if (ticker.get() % 30 == 0) {
                             ticker.getAndSet(1);
-                            usdtBalance = HuobiUtil.getBalanceByAccountId(spotAccountId, spot.getBaseCurrency(), spot.getQuoteCurrency());
+                            usdtBalance = HuobiUtil.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
                             logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
                         }
                     }
