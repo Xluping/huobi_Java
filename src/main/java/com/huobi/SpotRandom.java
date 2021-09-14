@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SpotRandom implements Job {
     private static int CURRENT_STRATEGY = 1;// 决定了止盈百分比
     private static CandlestickIntervalEnum candlestickIntervalEnum = CandlestickIntervalEnum.MIN60; //按照30分钟周期
-    private static int numberOfCandlestick = 6; // 按照过去4个蜡烛图来筛选symbol
+    private static int numberOfCandlestick = 4; // 按照过去4个蜡烛图来筛选symbol
     private static final String QUOTE_CURRENCY = "usdt";
     private static int HOLD_SIZE = 3; // 允许在3个symbol 没有卖出的情况下,可以重启
 
