@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SpotRandom implements Job {
 
-    private static final int CURRENT_STRATEGY = 1;// 决定了止盈百分比
+    private static final int CURRENT_STRATEGY = 2;// 决定了止盈百分比
     private static final CandlestickIntervalEnum candlestickIntervalEnum = CandlestickIntervalEnum.MIN60; //按照30分钟周期
     private static final int numberOfCandlestick = 6; // 按照过去4个蜡烛图来筛选symbol
     private static final String QUOTE_CURRENCY = "usdt";
-    private static final int HOLD_SIZE = 2; // 允许在3个symbol 没有卖出的情况下,可以重启
+    private static int hold_size; // 允许在3个symbol 没有卖出的情况下,可以重启
 
     private static ConcurrentHashMap<String, Spot> finalSymbolMap = new ConcurrentHashMap<>();
     private static final Logger log = LoggerFactory.getLogger(SpotRandom.class);
@@ -38,7 +38,6 @@ public class SpotRandom implements Job {
     private static volatile BigDecimal totalBalance;
     private static final ArrayList<String> symbolList;
     private static Long spotAccountId;
-    private static int originalSize;
 
 
     static {
@@ -53,19 +52,18 @@ public class SpotRandom implements Job {
         JobManagement jobManagement = new JobManagement();
         jobManagement.addJob("0/35 * * * *  ?", SpotRandom.class, "SpotRandom");
         // 时间设置上避开整点,
-        jobManagement.addJob("0 10 0/1 * *  ?", SpotFilter.class, "spotFilter");
+        jobManagement.addJob("0 0 0/1 * *  ?", SpotFilter.class, "spotFilter");
         jobManagement.startJob();
 
     }
 
     public static void launch() {
-
+        log.error("====== SpotRandom.launch : 策略启动 ======");
         StopWatch clock = new StopWatch();
         clock.start(); // 计时开始
         spotAccountId = StrategyCommon.getAccountIdByType("spot");
-
         finalSymbolMap = SpotFilter.filter();
-        originalSize = finalSymbolMap.size();
+        hold_size = finalSymbolMap.size() >> 2;
         log.error("====== SpotRandom.launch-{}: 按照 {} 个 {}  筛选出 {} 个symbol======", CURRENT_STRATEGY, numberOfCandlestick, candlestickIntervalEnum.getCode(), finalSymbolMap.size());
 
         // 为每个symbol 均分 等额的 usdt
@@ -90,12 +88,14 @@ public class SpotRandom implements Job {
     public static void doBuy(ConcurrentHashMap<String, Spot> finalSymbolMap) {
         try {
             totalBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, QUOTE_CURRENCY);
+            log.info("====================================================================");
             log.info("====== SpotRandom-launch-{}: 当前账户余额: {} ======", CURRENT_STRATEGY, totalBalance);
             BigDecimal portion = totalBalance.divide(new BigDecimal(finalSymbolMap.size()), 2, RoundingMode.HALF_UP);
             StrategyCommon.getSymbolInfoByName(finalSymbolMap, portion);
             log.info("====== SpotRandom.launch-{}: 每个symbol分配 {} {} ======", CURRENT_STRATEGY, portion, QUOTE_CURRENCY);
             log.info("====== SpotRandom.launch-{}: 最终筛选得到 {} 个symbol ======", CURRENT_STRATEGY, finalSymbolMap.size());
             log.info("====== SpotRandom.launch-{}: 开始获取各个symbol的信息, 并按市价下单 ======", CURRENT_STRATEGY);
+            log.info("====================================================================");
 
             for (Map.Entry<String, Spot> entry : finalSymbolMap.entrySet()) {
                 // buy-market  for every symbol
@@ -121,10 +121,6 @@ public class SpotRandom implements Job {
         ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
         log.info("====== SpotRandom.checkOrderStatus buyOrderMap.size: {} ======", buyOrderMap.size());
         log.info("====== SpotRandom.checkOrderStatus sellOrderMap.size: {} ======", sellOrderMap.size());
-        if (buyOrderMap.size() == 0) {
-            // maps.size 都等于0, 说明余额不足,下单失败.
-            doBuy(finalSymbolMap);
-        }
 
         Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
         Iterator<ConcurrentHashMap.Entry<String, Spot>> sellIterator = sellOrderMap.entrySet().iterator();
@@ -176,8 +172,8 @@ public class SpotRandom implements Job {
         }
 
         // 允许接收3个订单没有卖出;&& 原订单数 > 3
-        if (sellOrderMap.size() <= HOLD_SIZE && originalSize > HOLD_SIZE) {
-            log.info("====== SpotRandom-checkOrderStatus: sellOrderMap.size: {} ======", sellOrderMap.size());
+        if (sellOrderMap.size() <= hold_size) {
+            log.info("====== SpotRandom-checkOrderStatus: sellOrderMap.size: {}, 可以重新启动 ======", sellOrderMap.size());
             if (sellOrderMap.size() == 0) {
                 log.info("====== SpotRandom-checkOrderStatus: 卖单已全部成交 ======");
             }
