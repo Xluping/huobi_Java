@@ -70,10 +70,9 @@ public class SpotRandom implements Job {
 
         // 为每个symbol 均分 等额的 usdt
 //        totalBalance = new BigDecimal("10000");
-        totalBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, QUOTE_CURRENCY);
-        log.info("====== SpotRandom-launch-{}: 当前账户余额: {} ======", CURRENT_STRATEGY, totalBalance);
         try {
-            doBuy(totalBalance, finalSymbolMap);
+
+            doBuy(finalSymbolMap);
         } catch (Exception e) {
             log.error("======SpotRandom.launch : {} ======", e.getMessage());
 
@@ -88,8 +87,10 @@ public class SpotRandom implements Job {
 
     }
 
-    public static void doBuy(BigDecimal totalBalance, ConcurrentHashMap<String, Spot> finalSymbolMap) {
+    public static void doBuy(ConcurrentHashMap<String, Spot> finalSymbolMap) {
         try {
+            totalBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, QUOTE_CURRENCY);
+            log.info("====== SpotRandom-launch-{}: 当前账户余额: {} ======", CURRENT_STRATEGY, totalBalance);
             BigDecimal portion = totalBalance.divide(new BigDecimal(finalSymbolMap.size()), 2, RoundingMode.HALF_UP);
             StrategyCommon.getSymbolInfoByName(finalSymbolMap, portion);
             log.info("====== SpotRandom.launch-{}: 每个symbol分配 {} {} ======", CURRENT_STRATEGY, portion, QUOTE_CURRENCY);
@@ -122,7 +123,7 @@ public class SpotRandom implements Job {
         log.info("======SpotRandom.checkOrderStatus sellOrderMap.size: {} ======", sellOrderMap.size());
         if (buyOrderMap.size() == 0) {
             // maps.size 都等于0, 说明余额不足,下单失败.
-            doBuy(totalBalance, finalSymbolMap);
+            doBuy(finalSymbolMap);
         }
 
         Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
