@@ -1,9 +1,7 @@
 package com.huobi;
 
-import com.huobi.client.req.market.CandlestickRequest;
 import com.huobi.client.req.trade.SubOrderUpdateV2Request;
 import com.huobi.constant.enums.CandlestickIntervalEnum;
-import com.huobi.model.market.Candlestick;
 import com.huobi.model.trade.Order;
 import com.huobi.model.trade.OrderUpdateV2;
 import org.apache.commons.lang.StringUtils;
@@ -15,7 +13,9 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -31,19 +31,16 @@ public class SpotRandom implements Job {
     private static final String QUOTE_CURRENCY = "usdt";
     private static final int HOLD_SIZE = 3; // 允许在3个symbol 没有卖出的情况下,可以重启
 
-    private static volatile HashMap<String, Spot> finalSymbolMap = new HashMap<>();
+    private static ConcurrentHashMap<String, Spot> finalSymbolMap = new ConcurrentHashMap<>();
     private static final Logger log = LoggerFactory.getLogger(SpotRandom.class);
-    private static final boolean qualified = false;
     private static volatile boolean balanceChanged = false;
     private static volatile BigDecimal totalBalance;
     private static final ArrayList<String> symbolList;
-    private static final SpotFilter spotFilter;
 
 
     static {
         // 第一次过滤, 得到 symbol string , like "btcusdt"
         symbolList = StrategyCommon.getSymbolByConditions(QUOTE_CURRENCY);
-        spotFilter = new SpotFilter(symbolList, candlestickIntervalEnum, numberOfCandlestick);
     }
 
     private Long spotAccountId;
@@ -54,9 +51,9 @@ public class SpotRandom implements Job {
         SpotRandom spotRandom = new SpotRandom();
         spotRandom.launch();
         JobManagement jobManagement = new JobManagement();
-        jobManagement.addJob("30 0/5 * * *  ?", SpotRandom.class, "SpotRandom");
-        // update spotmap every 1 hour
-        jobManagement.addJob("0 0 0/1 * *  ?", SpotFilter.class, "spotFilter");
+        jobManagement.addJob("30 0/10 * * *  ?", SpotRandom.class, "SpotRandom");
+        // 时间设置上避开整点,
+        jobManagement.addJob("0 10 0/1 * *  ?", SpotFilter.class, "spotFilter");
         jobManagement.startJob();
     }
 
@@ -64,7 +61,7 @@ public class SpotRandom implements Job {
 
         StopWatch clock = new StopWatch();
         clock.start(); // 计时开始
-        finalSymbolMap = spotFilter.filter();
+        finalSymbolMap = SpotFilter.filter();
         log.error("====== SpotRandom.launch-{}: 按照 {} 个 {}  筛选出 {} 个symbol======", CURRENT_STRATEGY, numberOfCandlestick, candlestickIntervalEnum.getCode(), finalSymbolMap.size());
 
         // 为每个symbol 均分 等额的 usdt
@@ -82,7 +79,7 @@ public class SpotRandom implements Job {
         log.info("====== SpotRandom.launch-{}: executeTime {} ms ======", CURRENT_STRATEGY, executeTime);
     }
 
-    public static void doBuy(BigDecimal totalBalance, HashMap<String, Spot> finalSymbolMap) {
+    public static void doBuy(BigDecimal totalBalance, ConcurrentHashMap<String, Spot> finalSymbolMap) {
         BigDecimal portion = totalBalance.divide(new BigDecimal(finalSymbolMap.size()), 2, RoundingMode.HALF_UP);
         StrategyCommon.getSymbolInfoByName(finalSymbolMap, portion);
         log.error("====== SpotRandom.launch-{}: 每个symbol分配 {} {} ======", CURRENT_STRATEGY, portion, QUOTE_CURRENCY);
@@ -245,4 +242,15 @@ public class SpotRandom implements Job {
     }
 
 
+    public static ArrayList<String> getSymbolList() {
+        return symbolList;
+    }
+
+    public static CandlestickIntervalEnum getCandlestickIntervalEnum() {
+        return candlestickIntervalEnum;
+    }
+
+    public static int getNumberOfCandlestick() {
+        return numberOfCandlestick;
+    }
 }
