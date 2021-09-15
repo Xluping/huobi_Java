@@ -175,7 +175,7 @@ public class StrategyCommon {
             // 价格,币数 有严格的小数位限制
             assert sellPrice != null;
             sellPrice = sellPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-            coinAmount = coinAmount.setScale(spot.getAmountPrecision() - 1, RoundingMode.HALF_DOWN);
+            coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.DOWN);
             //最小下单量限制
             BigDecimal orderAmount;
             //最小下单量限制
@@ -198,7 +198,8 @@ public class StrategyCommon {
             CurrentAPI.getApiInstance().getTradeClient().createOrder(sellRequest);
             sellOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
-            log.error("======StrategyCommon.sell : 卖出时发生异常 {} ======", e.getMessage());
+            log.error("======StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 99%的币 ======", e.getMessage());
+            sell(currentStrategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("0.99")), type);
         }
 
     }

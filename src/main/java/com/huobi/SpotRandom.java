@@ -119,8 +119,8 @@ public class SpotRandom implements Job {
 
         ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
         ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
-        log.info("======SpotRandom.checkOrderStatus buyOrderMap.size: {} ======", buyOrderMap.size());
-        log.info("======SpotRandom.checkOrderStatus sellOrderMap.size: {} ======", sellOrderMap.size());
+        log.info("====== SpotRandom.checkOrderStatus buyOrderMap.size: {} ======", buyOrderMap.size());
+        log.info("====== SpotRandom.checkOrderStatus sellOrderMap.size: {} ======", sellOrderMap.size());
         if (buyOrderMap.size() == 0) {
             // maps.size 都等于0, 说明余额不足,下单失败.
             doBuy(finalSymbolMap);
