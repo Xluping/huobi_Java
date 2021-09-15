@@ -1,18 +1,15 @@
 package com.huobi;
 
 import com.huobi.client.req.market.CandlestickRequest;
-import com.huobi.constant.enums.CandlestickIntervalEnum;
 import com.huobi.model.market.Candlestick;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -23,31 +20,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class SpotFilter implements Job {
 
-    Logger log = LoggerFactory.getLogger(SpotFilter.class);
-    ArrayList<String> symbolList;
-    CandlestickIntervalEnum candlestickIntervalEnum;
-    int numberOfCandlestick;
+    static Logger log = LoggerFactory.getLogger(SpotFilter.class);
 
-    public SpotFilter(ArrayList<String> symbolList, CandlestickIntervalEnum candlestickIntervalEnum, int numberOfCandlestick) {
-        this.symbolList = symbolList;
-        this.candlestickIntervalEnum = candlestickIntervalEnum;
-        this.numberOfCandlestick = numberOfCandlestick;
-    }
 
     @Override
-    public void execute(JobExecutionContext context) throws JobExecutionException {
+    public void execute(JobExecutionContext context) {
         filter();
     }
 
-    public HashMap<String, Spot> filter() {
+    /**
+     * 二次过滤
+     */
+    public static ConcurrentHashMap<String, Spot> filter() {
         AtomicBoolean qualified = new AtomicBoolean(false);
-        HashMap<String, Spot> finalSymbolMap = new HashMap<>();
+        ConcurrentHashMap<String, Spot> finalSymbolMap = new ConcurrentHashMap<>();
         // 第二次过滤symbol, 获取每个symbol 的 closePrice 数组,
-        symbolList.forEach(symbolStr -> {
+        SpotRandom.getSymbolList().forEach(symbolStr -> {
             List<Candlestick> klineList = CurrentAPI.getApiInstance().getMarketClient().getCandlestick(CandlestickRequest.builder()
                     .symbol(symbolStr)
-                    .interval(candlestickIntervalEnum)
-                    .size(numberOfCandlestick)
+                    .interval(SpotRandom.getCandlestickIntervalEnum())
+                    .size(SpotRandom.getNumberOfCandlestick())
                     .build());
             // 按照过去30分钟蜡烛图来看,筛选出连续4*30分钟 下跌的symbol
             StringBuilder sb = new StringBuilder();
@@ -72,7 +64,7 @@ public class SpotFilter implements Job {
 
             log.info("====== SpotFilter.filter: symbol: {}, closePrice: {}, qualified: {} ======", symbolStr, sb.toString(), qualified);
             if (qualified.get()) {
-                finalSymbolMap.put(symbolStr, null);
+                finalSymbolMap.put(symbolStr, new Spot());
             }
             qualified.set(false);
         });

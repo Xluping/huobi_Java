@@ -12,7 +12,6 @@ import com.huobi.model.generic.Symbol;
 import com.huobi.model.market.MarketTrade;
 import com.huobi.model.trade.Order;
 import lombok.Synchronized;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +42,7 @@ public class StrategyCommon {
     static Logger log = LoggerFactory.getLogger(StrategyCommon.class);
 
     @Synchronized
-    public static ArrayList<BigDecimal> calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
+    public static void calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
         priceList.clear();
         if (strategy == 1) {
             // 高频
@@ -68,7 +67,6 @@ public class StrategyCommon {
             calculateBuyPrice(3, latestPrice, scale, Constants.LOW_RANGE_3 - Constants.MEDIUM_RANGE_3, Constants.LOW_COUNT_3, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_3)));
         }
 
-        return priceList;
     }
 
     public static ArrayList<BigDecimal> getPriceList() {
@@ -152,49 +150,6 @@ public class StrategyCommon {
     }
 
     /**
-     * todo 模拟下单.
-     * 保存 clientOrderId, amount 以便轮巡时 查看下单状态
-     * 根据 usdt 计算买入的币的数量
-     *
-     * @param type 1 buy-limit  2 buy-market
-     */
-    public static void buySimulation(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt, int type) {
-
-        //最小下单金额
-        if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            log.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
-            return;
-        }
-        spot.setOrderValue(usdt);
-
-        BigDecimal coinAmount = usdt.divide(buyPrice, RoundingMode.HALF_UP);
-        //自定义订单号
-        String clientOrderId = spot.getSymbol() + System.nanoTime();
-        // 价格,币数 有严格的小数位限制
-        buyPrice = buyPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-        coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_UP);
-
-        //最小下单量限制
-        if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            log.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
-            return;
-
-        }
-        spot.setOrderAmount(coinAmount);
-        CreateOrderRequest buyRequest;
-
-        if (type == 1) {
-            // buy
-            log.error("====== {}-{}-StrategyCommon:  限价-BUY at: {},  clientOrderId: {}, orderAmount: {} 币 ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, coinAmount);
-        } else {
-            log.error("====== {}-{}-StrategyCommon:  市价-BUY at: {},  clientOrderId: {}, orderAmount: {} USDT ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, usdt);
-        }
-
-        buyOrderMap.putIfAbsent(clientOrderId, spot);
-
-    }
-
-    /**
      * 计算卖单价格, 并挂单.
      * 1:sell-limit
      * 2:sell-market
@@ -241,50 +196,6 @@ public class StrategyCommon {
 
     }
 
-    /**
-     * todo 模拟下单.
-     * <p>
-     * 1:sell-limit
-     * 2:sell-market
-     */
-    public static void sellSimulation(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount, int type) {
-        // 计算卖出价格 buyPrice * (1+offset);
-        BigDecimal sellPrice = null;
-        if (currentStrategy == 1) {
-            sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
-        } else if (currentStrategy == 2) {
-            sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_2);
-        } else if (currentStrategy == 3) {
-            sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_3);
-        }
-        //自定义订单号
-        String clientOrderId = spot.getSymbol() + System.nanoTime();
-        // 价格,币数 有严格的小数位限制
-        assert sellPrice != null;
-        sellPrice = sellPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-        coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.HALF_UP);
-        //最小下单量限制
-        BigDecimal orderAmount;
-        //最小下单量限制
-        if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            log.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
-            orderAmount = spot.getLimitOrderMinOrderAmt();
-        } else {
-            orderAmount = coinAmount;
-        }
-
-        spot.setOrderAmount(orderAmount);
-
-        CreateOrderRequest sellRequest;
-        if (type == 1) {
-            log.error("====== {}-{}-StrategyCommon: 限价-SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
-        } else {
-            log.error("====== {}-{}-StrategyCommon: 市价-SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
-        }
-        sellOrderMap.putIfAbsent(clientOrderId, spot);
-
-
-    }
 
     public static void setProfit(BigDecimal win) {
 
@@ -318,7 +229,7 @@ public class StrategyCommon {
     public static Long getAccountIdByType(String type) {
         List<Account> accountList = CurrentAPI.getApiInstance().getAccountClient().getAccounts();
         accountList.forEach(account -> {
-            if (account.getType().equals(type) && account.getState().equals("working")) {
+            if (account.getType().equals(type) && "working".equals(account.getState())) {
                 accountId = account.getId();
             }
         });
@@ -330,7 +241,7 @@ public class StrategyCommon {
      * 根据账户 ID 查询账户余额
      *
      * @param quotaCurrency 交易对
-     * @return 返回usdt余额
+     * @return 返回 usdt 余额
      */
     public static BigDecimal getQuotaBalanceByAccountId(Long accountId, String quotaCurrency) {
         AtomicReference<BigDecimal> bal = new AtomicReference<>(BigDecimal.ZERO);
@@ -338,7 +249,7 @@ public class StrategyCommon {
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
-                if (balance.getType().equalsIgnoreCase("trade")) {
+                if ("trade".equalsIgnoreCase(balance.getType())) {
                     bal.set(balance.getBalance());
                 }
             }
@@ -360,20 +271,20 @@ public class StrategyCommon {
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
-                if (balance.getType().equalsIgnoreCase("trade")) {
+                if ("trade".equalsIgnoreCase(balance.getType())) {
                     sb.append(baseCurrency).append("-trade: ").append(balance.getBalance()).append("; \n");
                 }
-                if (balance.getType().equalsIgnoreCase("frozen")) {
+                if ("frozen".equalsIgnoreCase(balance.getType())) {
                     sb.append(baseCurrency).append("-frozen: ").append(balance.getBalance()).append("; \n");
                 }
 
             }
             if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
-                if (balance.getType().equalsIgnoreCase("trade")) {
+                if ("trade".equalsIgnoreCase(balance.getType())) {
                     bal.set(balance.getBalance());
                     sb.append(quotaCurrency).append("-trade: ").append(balance.getBalance()).append("; \n");
                 }
-                if (balance.getType().equalsIgnoreCase("frozen")) {
+                if ("frozen".equalsIgnoreCase(balance.getType())) {
                     sb.append(quotaCurrency).append("-frozen: ").append(balance.getBalance()).append("; \n");
                 }
             }
@@ -393,7 +304,7 @@ public class StrategyCommon {
         AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
-            if (balance.getType().equalsIgnoreCase("trade")) {
+            if ("trade".equalsIgnoreCase(balance.getType())) {
                 log.info("====== HuobiUtil-getBalanceByAccountId: point balance: {} ======", balance.toString());
 
                 bal.set(balance.getBalance());
@@ -490,12 +401,10 @@ public class StrategyCommon {
      * 查询卖单
      *
      * @param clientOrderId 只有买单有自定义的clientOrderId
-     * @return
      */
     public static Order getOrderByClientId(String clientOrderId) {
         try {
-            Order order = CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
-            return order;
+            return CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
 
         } catch (Exception e) {
             // 避免各种原因下单错误, 导致整体逻辑异常
@@ -526,6 +435,7 @@ public class StrategyCommon {
      * pioneer  新币
      */
     public static ArrayList<String> getSymbolByConditions(String quoteCurrency) {
+
         ArrayList<String> list = new ArrayList<>();
         List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
@@ -533,9 +443,8 @@ public class StrategyCommon {
             if (null == symbol.getUnderlying()) {
                 // online  usdt交易对
                 if ("online".equalsIgnoreCase(symbol.getState()) && quoteCurrency.equalsIgnoreCase(symbol.getQuoteCurrency())) {
-                    // 主板,观察区,创业板
-                    if (SymbolPartionEnum.MAIN.getName().equalsIgnoreCase(symbol.getSymbolPartition())
-                            || SymbolPartionEnum.POTENTIALS.getName().equalsIgnoreCase(symbol.getSymbolPartition())
+                    // 观察区,创业板
+                    if (SymbolPartionEnum.POTENTIALS.getName().equalsIgnoreCase(symbol.getSymbolPartition())
                             || SymbolPartionEnum.INNOVATION.getName().equalsIgnoreCase(symbol.getSymbolPartition())
                     ) {
                         list.add(symbol.getSymbol());
@@ -544,12 +453,12 @@ public class StrategyCommon {
             }
         });
 
-        log.error("====== HuobiUtil-getAllAvailableSymbols: 从主板,观察区,创业板 筛选出 {} 个交易对======", list.size());
+        log.error("====== HuobiUtil-getAllAvailableSymbols: 从 观察区,创业板 筛选出 {} 个交易对======", list.size());
 
         return list;
     }
 
-    public static HashMap<String, Spot> getSymbolInfoByName(HashMap<String, Spot> map, BigDecimal portion) {
+    public static void getSymbolInfoByName(ConcurrentHashMap<String, Spot> map, BigDecimal portion) {
         List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
             if (map.containsKey(symbol.getSymbol())) {
@@ -566,8 +475,6 @@ public class StrategyCommon {
                 map.replace(symbol.getSymbol(), spot);
             }
         });
-
-        return map;
 
     }
 

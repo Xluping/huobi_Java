@@ -32,7 +32,7 @@ public class Test {
                 // online  usdt交易对
                 if ("online".equalsIgnoreCase(symbol.getState()) && "usdt".equalsIgnoreCase(symbol.getQuoteCurrency())) {
                     // 主板, 观察区
-                    if (SymbolPartionEnum.MAIN.getName().equalsIgnoreCase(symbol.getSymbolPartition())
+                    if (SymbolPartionEnum.INNOVATION.getName().equalsIgnoreCase(symbol.getSymbolPartition())
                             || SymbolPartionEnum.POTENTIALS.getName().equalsIgnoreCase(symbol.getSymbolPartition())
 
                     ) {
