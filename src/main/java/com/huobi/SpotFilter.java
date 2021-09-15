@@ -30,6 +30,7 @@ public class SpotFilter implements Job {
 
     /**
      * 二次过滤
+     * K线周期以 新加坡时间 为基准
      */
     public static ConcurrentHashMap<String, Spot> filter() {
         AtomicBoolean qualified = new AtomicBoolean(false);

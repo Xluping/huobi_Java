@@ -1,15 +1,25 @@
 package com.huobi;
 
 import com.huobi.client.GenericClient;
+import com.huobi.client.req.account.AccountBalanceRequest;
 import com.huobi.client.req.market.CandlestickRequest;
+import com.huobi.client.req.trade.OrderHistoryRequest;
+import com.huobi.client.req.trade.OrdersRequest;
 import com.huobi.constant.HuobiOptions;
 import com.huobi.constant.enums.CandlestickIntervalEnum;
+import com.huobi.constant.enums.OrderStateEnum;
+import com.huobi.constant.enums.OrderTypeEnum;
+import com.huobi.constant.enums.QueryDirectionEnum;
+import com.huobi.model.account.AccountBalance;
+import com.huobi.model.account.Balance;
 import com.huobi.model.generic.Symbol;
 import com.huobi.model.market.Candlestick;
+import com.huobi.model.trade.Order;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @program: huobi-client
@@ -19,7 +29,13 @@ import java.util.List;
  */
 @Slf4j
 public class Test {
+    static long accountId = 14086863L;
+
     public static void main(String[] args) {
+
+    }
+
+    public void filter() {
         GenericClient genericService = GenericClient.create(HuobiOptions.builder().build());
         List<Symbol> result = new ArrayList<>();
 
@@ -44,15 +60,6 @@ public class Test {
         });
         log.error("======Test.main : result {} ======", result.size());
 
-
-        List<Candlestick> klineList = CurrentAPI.getApiInstance().getMarketClient().getCandlestick(CandlestickRequest.builder()
-                .symbol("btcusdt")
-                .interval(CandlestickIntervalEnum.MIN30)
-                .size(3)
-                .build());
-        klineList.forEach(candlestick -> {
-            log.error("======Test.main : {} ======", candlestick.toString());
-        });
 
     }
 }

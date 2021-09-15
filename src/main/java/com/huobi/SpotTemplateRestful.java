@@ -66,9 +66,9 @@ public class SpotTemplateRestful implements Job {
             PORTION = "3000";
             logger.error("====== {}-main: PORTION == null || PORTION.isEmpty() set PORTION = {} ======", SYMBOL, PORTION);
         }
-        logger.error("====== main:  SYMBOL = {} ======", SYMBOL);
-        logger.error("====== main:  PORTION = {} ======", PORTION);
-        logger.error("====== main:  STRATEGY = {} ======", CURRENT_STRATEGY);
+        logger.info("====== main:  SYMBOL = {} ======", SYMBOL);
+        logger.info("====== main:  PORTION = {} ======", PORTION);
+        logger.info("====== main:  STRATEGY = {} ======", CURRENT_STRATEGY);
 
         SpotTemplateRestful spotBuyer = new SpotTemplateRestful();
         spotBuyer.init();
@@ -123,7 +123,7 @@ public class SpotTemplateRestful implements Job {
         spot.setAccountId(spotAccountId);
 
         usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
-        logger.error("{}-{}-prepareSpot: 分配到的仓位: {} ======", SYMBOL, currentStrategy, PORTION);
+        logger.info("{}-{}-prepareSpot: 分配到的仓位: {} ======", SYMBOL, currentStrategy, PORTION);
         spot.setTotalBalance(totalBalance);
         BigDecimal highBalance;
         BigDecimal mediumBalance;
@@ -196,16 +196,16 @@ public class SpotTemplateRestful implements Job {
         spot.setPortionHigh(portionHigh);
         spot.setPortionMedium(portionMedium);
         spot.setPortionLow(portionLow);
-        logger.error("{}-prepareSpot-当前策略: {} ======", SYMBOL, currentStrategy);
-        logger.error("{}-prepareSpot-分配到-H-的仓位: {}-{}", SYMBOL, highBalance, spot.getQuoteCurrency());
-        logger.error("{}-prepareSpot-分配到-M-的仓位: {}-{}", SYMBOL, mediumBalance, spot.getQuoteCurrency());
-        logger.error("{}-prepareSpot-分配到-L-的仓位: {}-{}", SYMBOL, lowBalance, spot.getQuoteCurrency());
-        logger.error("{}-prepareSpot-H 每次补仓份额: {}-{}", SYMBOL, portionHigh, spot.getQuoteCurrency());
-        logger.error("{}-prepareSpot-H 补仓次数: {}", SYMBOL, highCount);
-        logger.error("{}-prepareSpot-M 每次补仓份额: {}-{}", SYMBOL, portionMedium, spot.getQuoteCurrency());
-        logger.error("{}-prepareSpot-M 补仓次数: {}", SYMBOL, mediumCount);
-        logger.error("{}-prepareSpot-L 每次补仓份额: {}-{}", SYMBOL, portionLow, spot.getQuoteCurrency());
-        logger.error("{}-prepareSpot-L 补仓次数: {}", SYMBOL, lowCount);
+        logger.info("{}-prepareSpot-当前策略: {} ======", SYMBOL, currentStrategy);
+        logger.info("{}-prepareSpot-分配到-H-的仓位: {}-{}", SYMBOL, highBalance, spot.getQuoteCurrency());
+        logger.info("{}-prepareSpot-分配到-M-的仓位: {}-{}", SYMBOL, mediumBalance, spot.getQuoteCurrency());
+        logger.info("{}-prepareSpot-分配到-L-的仓位: {}-{}", SYMBOL, lowBalance, spot.getQuoteCurrency());
+        logger.info("{}-prepareSpot-H 每次补仓份额: {}-{}", SYMBOL, portionHigh, spot.getQuoteCurrency());
+        logger.info("{}-prepareSpot-H 补仓次数: {}", SYMBOL, highCount);
+        logger.info("{}-prepareSpot-M 每次补仓份额: {}-{}", SYMBOL, portionMedium, spot.getQuoteCurrency());
+        logger.info("{}-prepareSpot-M 补仓次数: {}", SYMBOL, mediumCount);
+        logger.info("{}-prepareSpot-L 每次补仓份额: {}-{}", SYMBOL, portionLow, spot.getQuoteCurrency());
+        logger.info("{}-prepareSpot-L 补仓次数: {}", SYMBOL, lowCount);
 
         logger.info("====== SpotTemplate-prepareSpot: {}-{}", spot.toString(), spot.getQuoteCurrency());
 
@@ -215,24 +215,24 @@ public class SpotTemplateRestful implements Job {
         StrategyCommon.resetFeeAndProfit(SYMBOL, currentStrategy);
         logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, currentStrategy, spot);
         latestPrice = StrategyCommon.getCurrentTradPrice(spot.getSymbol());
-        logger.error("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
+        logger.info("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
         StrategyCommon.calculateBuyPriceList(currentStrategy, latestPrice, spot.getPricePrecision());
         usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buy(currentStrategy, spot, latestPrice, spot.getPortionHigh(), 2);
         } else {
-            logger.error("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, currentStrategy, usdtBalance.toString());
+            logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, currentStrategy, usdtBalance.toString());
         }
 //        ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
 //        List<Order> sellOrders = StrategyCommon.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
-//        logger.error("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrders.size());
+//        logger.info("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrders.size());
 ////        sellOrders.forEach(order -> {
 ////            if ("api".equalsIgnoreCase(order.getSource())) {
 ////                sellOrderMap.putIfAbsent(order.getId(), order.getAmount());
 ////            }
 ////        });
-//        logger.error("====== {}-{}-launch: 现有 api 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrderMap.size());
+//        logger.info("====== {}-{}-launch: 现有 api 卖单 {} 个  ======", SYMBOL, currentStrategy, sellOrderMap.size());
 
     }
 
@@ -294,7 +294,7 @@ public class SpotTemplateRestful implements Job {
 
                 if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
                     balanceChanged = true;
-                    logger.error("====== {}-{}-priceListener-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
+                    logger.info("====== {}-{}-priceListener-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
                     BigDecimal buyAmount = buyOrder.getFilledAmount();
                     // TODO xlp 9/7/21 11:01 AM  :  matchresults 接口获取准确值
                     StrategyCommon.setFee(buyOrder.getFilledFees());
@@ -317,7 +317,7 @@ public class SpotTemplateRestful implements Job {
                     buyIterator.remove();
                 } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
                     balanceChanged = true;
-                    logger.error("====== {}-{}-priceListener-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
+                    logger.info("====== {}-{}-priceListener-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
                     orderCount.decrementAndGet();
                     buyIterator.remove();
                 }
@@ -333,7 +333,7 @@ public class SpotTemplateRestful implements Job {
                 if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
                     balanceChanged = true;
 
-                    logger.error("====== {}-{}-priceListener-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
+                    logger.info("====== {}-{}-priceListener-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
                     logger.info(sellOrder.toString());
                     BigDecimal sellPrice = sellOrder.getPrice();
                     BigDecimal sellAmount = sellOrder.getAmount();
@@ -343,7 +343,7 @@ public class SpotTemplateRestful implements Job {
                     orderCount.decrementAndGet();
                     sellIterator.remove();
                 } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
-                    logger.error("====== {}-{}-priceListener-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
+                    logger.info("====== {}-{}-priceListener-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
                     orderCount.incrementAndGet();
                     sellIterator.remove();
                 }
@@ -355,7 +355,7 @@ public class SpotTemplateRestful implements Job {
             //本轮买单已全部卖出. 重启应用
             // 启动时,余额不足 不执行此逻辑, insufficientFound=true
             if (sellOrderMap.size() == 0 && !insufficientFound) {
-                logger.error("====== {}-{}-priceListener-开始清理残余买单.======", SYMBOL, CURRENT_STRATEGY);
+                logger.info("====== {}-{}-priceListener-开始清理残余买单.======", SYMBOL, CURRENT_STRATEGY);
                 Iterator<Map.Entry<String, Spot>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
 
                 while (iterator.hasNext()) {
@@ -363,7 +363,7 @@ public class SpotTemplateRestful implements Job {
                     String clientId = entry.getKey();
                     Order remainOrder = StrategyCommon.getOrderByClientId(clientId);
                     assert remainOrder != null;
-                    logger.error("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
+                    logger.info("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
                     StrategyCommon.cancelOrder(CURRENT_STRATEGY, clientId);
                     iterator.remove();
                 }
