@@ -27,21 +27,20 @@ import java.util.concurrent.ConcurrentHashMap;
  * @create: 9/14/21 5:38 PM
  */
 public class SpotRandom implements Job {
-    private static int CURRENT_STRATEGY = 1;// 决定了止盈百分比
-    private static CandlestickIntervalEnum candlestickIntervalEnum = CandlestickIntervalEnum.MIN60; //按照30分钟周期
-    private static int numberOfCandlestick = 4; // 按照过去4个蜡烛图来筛选symbol
+    private static final int CURRENT_STRATEGY = 1;// 决定了止盈百分比
+    private static final CandlestickIntervalEnum candlestickIntervalEnum = CandlestickIntervalEnum.MIN60; //按照30分钟周期
+    private static final int numberOfCandlestick = 4; // 按照过去4个蜡烛图来筛选symbol
     private static final String QUOTE_CURRENCY = "usdt";
-    private static int HOLD_SIZE = 3; // 允许在3个symbol 没有卖出的情况下,可以重启
+    private static final int HOLD_SIZE = 3; // 允许在3个symbol 没有卖出的情况下,可以重启
 
     private static volatile boolean qualified = false;
-    private static HashMap<String, Spot> finalSymbolMap;
-    private static List<String> symbolList;
+    private static final HashMap<String, Spot> finalSymbolMap;
+    private static final List<String> symbolList;
     private static final Logger log = LoggerFactory.getLogger(SpotRandom.class);
 
     static {
         finalSymbolMap = new HashMap<>();
         symbolList = StrategyCommon.getSymbolByConditions(QUOTE_CURRENCY);
-
     }
 
 
@@ -56,6 +55,7 @@ public class SpotRandom implements Job {
     }
 
     public void launch() {
+
         StopWatch clock = new StopWatch();
         clock.start(); // 计时开始
         // 第一次过滤, 得到 symbol string , like "btcusdt"
@@ -170,8 +170,13 @@ public class SpotRandom implements Job {
      * 定时任务处理之前的买单,卖单, 防止 websocket 断掉,买/卖单 没有及时更新
      */
     public void checkOrderStatus() {
+
         ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
         ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
+        if (buyOrderMap.size() == 0 && buyOrderMap.size() == 0) {
+            log.error("====== SpotRandom-checkOrderStatus: maps.size=0, 等待卖单成交 ======");
+            return;
+        }
         Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
         Iterator<ConcurrentHashMap.Entry<String, Spot>> sellIterator = sellOrderMap.entrySet().iterator();
         while (buyIterator.hasNext()) {
@@ -219,6 +224,13 @@ public class SpotRandom implements Job {
         }
         // 允许接收3个订单没有卖出;&& 原订单数 > 3
         if (sellOrderMap.size() <= HOLD_SIZE && buyOrderMap.size() > HOLD_SIZE) {
+            buyOrderMap.clear();
+            log.error("====== SpotRandom-checkOrderStatus: 清空 buyOrderMap ======");
+            log.error("====== SpotRandom-checkOrderStatus: sellOrderMap.size: {} ======", sellOrderMap.size());
+            if (sellOrderMap.size() == 0) {
+                log.error("====== SpotRandom-checkOrderStatus: 卖单已全部成交 ======");
+
+            }
             launch();
         }
 
