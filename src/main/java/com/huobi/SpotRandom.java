@@ -15,10 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -34,16 +31,19 @@ public class SpotRandom implements Job {
     private static final String QUOTE_CURRENCY = "usdt";
     private static final int HOLD_SIZE = 3; // 允许在3个symbol 没有卖出的情况下,可以重启
 
-    private static final HashMap<String, Spot> finalSymbolMap = new HashMap<>();
+    private static volatile HashMap<String, Spot> finalSymbolMap = new HashMap<>();
     private static final Logger log = LoggerFactory.getLogger(SpotRandom.class);
-    private static volatile boolean qualified = false;
+    private static final boolean qualified = false;
     private static volatile boolean balanceChanged = false;
     private static volatile BigDecimal totalBalance;
-    private static final List<String> symbolList;
+    private static final ArrayList<String> symbolList;
+    private static final SpotFilter spotFilter;
 
 
     static {
+        // 第一次过滤, 得到 symbol string , like "btcusdt"
         symbolList = StrategyCommon.getSymbolByConditions(QUOTE_CURRENCY);
+        spotFilter = new SpotFilter(symbolList, candlestickIntervalEnum, numberOfCandlestick);
     }
 
     private Long spotAccountId;
@@ -54,7 +54,9 @@ public class SpotRandom implements Job {
         SpotRandom spotRandom = new SpotRandom();
         spotRandom.launch();
         JobManagement jobManagement = new JobManagement();
-        jobManagement.addJob("10 0/1 * * *  ?", SpotRandom.class, "SpotRandom");
+        jobManagement.addJob("30 0/5 * * *  ?", SpotRandom.class, "SpotRandom");
+        // update spotmap every 1 hour
+        jobManagement.addJob("0 0 0/1 * *  ?", SpotFilter.class, "spotFilter");
         jobManagement.startJob();
     }
 
@@ -62,45 +64,8 @@ public class SpotRandom implements Job {
 
         StopWatch clock = new StopWatch();
         clock.start(); // 计时开始
-        finalSymbolMap.clear();
-        // 第一次过滤, 得到 symbol string , like "btcusdt"
-        // 第二次过滤symbol, 获取每个symbol 的 closePrice 数组,
-        symbolList.forEach(symbolStr -> {
-            List<Candlestick> klineList = CurrentAPI.getApiInstance().getMarketClient().getCandlestick(CandlestickRequest.builder()
-                    .symbol(symbolStr)
-                    .interval(candlestickIntervalEnum)
-                    .size(numberOfCandlestick)
-                    .build());
-            // 按照过去30分钟蜡烛图来看,筛选出连续4*30分钟 下跌的symbol
-            StringBuilder sb = new StringBuilder();
-            BigDecimal basePrice = klineList.get(0).getClose();
-            sb.append(basePrice.toString()).append(" --> ");
-
-            for (int i = 1; i < klineList.size(); i++) {
-                sb.append(klineList.get(i).getClose());
-
-                if (basePrice.compareTo(klineList.get(i).getClose()) < 0) {
-
-                    qualified = false;
-                    break;
-                }
-                if (i != klineList.size() - 1) {
-                    sb.append(" --> ");
-                }
-                qualified = true;
-                basePrice = klineList.get(i).getClose();
-            }
-
-            log.info("====== SpotRandom.launch: symbol: {}, closePrice: {}, qualified: {} ======", symbolStr, sb.toString(), qualified);
-            if (qualified) {
-                finalSymbolMap.put(symbolStr, null);
-            }
-            qualified = false;
-        });
-        // reset  qualified, 重启后会用到
-        qualified = false;
+        finalSymbolMap = spotFilter.filter();
         log.error("====== SpotRandom.launch-{}: 按照 {} 个 {}  筛选出 {} 个symbol======", CURRENT_STRATEGY, numberOfCandlestick, candlestickIntervalEnum.getCode(), finalSymbolMap.size());
-
 
         // 为每个symbol 均分 等额的 usdt
         spotAccountId = StrategyCommon.getAccountIdByType("spot");
@@ -162,8 +127,6 @@ public class SpotRandom implements Job {
                 if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(order.getOrderStatus())) {
                     balanceChanged = true;
                     if (OrderTypeEnum.BUY_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.BUY_MARKET.getName().equalsIgnoreCase(order.getType())) {
-
-
                         log.error("====== {}-{}-{}已成交 : price: {}, amount: {} ======", order.getSymbol(), CURRENT_STRATEGY, order.getType(), orderTradePrice, orderTradeVolume);
                         StrategyCommon.sell(CURRENT_STRATEGY, finalSymbolMap.get(order.getSymbol()), orderTradePrice, orderTradeVolume, 1);
                     } else if (OrderTypeEnum.SELL_LIMIT.getName().equalsIgnoreCase(order.getType())) {

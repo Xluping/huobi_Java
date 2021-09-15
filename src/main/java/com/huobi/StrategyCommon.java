@@ -12,6 +12,7 @@ import com.huobi.model.generic.Symbol;
 import com.huobi.model.market.MarketTrade;
 import com.huobi.model.trade.Order;
 import lombok.Synchronized;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class StrategyCommon {
     private static long accountId = -1L;
 
 
-    static Logger logger = LoggerFactory.getLogger(StrategyCommon.class);
+    static Logger log = LoggerFactory.getLogger(StrategyCommon.class);
 
     @Synchronized
     public static ArrayList<BigDecimal> calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
@@ -96,10 +97,10 @@ public class StrategyCommon {
             BigDecimal downTo = goDown.add(pre);
             BigDecimal buyPosition = base.subtract(downTo);
             BigDecimal buyPrice = latestPrice.multiply(buyPosition).setScale(scale, RoundingMode.DOWN);
-            logger.error("====== {}-StrategyCommon-buyPosition: 下跌 {}% 到 {}% = {} ======", strategy, downTo.multiply(new BigDecimal("100")).toString(), buyPosition.multiply(new BigDecimal("100")).toString(), buyPrice.toString());
+            log.error("====== {}-StrategyCommon-buyPosition: 下跌 {}% 到 {}% = {} ======", strategy, downTo.multiply(new BigDecimal("100")).toString(), buyPosition.multiply(new BigDecimal("100")).toString(), buyPrice.toString());
             priceList.add(buyPrice);
         }
-        logger.error("==============================================================");
+        log.error("==============================================================");
     }
 
     /**
@@ -115,7 +116,7 @@ public class StrategyCommon {
 
         //最小下单金额
         if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
+            log.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
             return;
         }
         spot.setOrderValue(usdt);
@@ -129,7 +130,7 @@ public class StrategyCommon {
 
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            logger.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
+            log.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
             return;
 
         }
@@ -138,10 +139,10 @@ public class StrategyCommon {
 
         if (type == 1) {
             // buy
-            logger.error("====== {}-{}-StrategyCommon:  限价-BUY at: {},  clientOrderId: {}, orderAmount: {} 币 ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, coinAmount);
+            log.error("====== {}-{}-StrategyCommon:  限价-BUY at: {},  clientOrderId: {}, orderAmount: {} 币 ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, coinAmount);
             buyRequest = CreateOrderRequest.spotBuyLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), buyPrice, coinAmount);
         } else {
-            logger.error("====== {}-{}-StrategyCommon:  市价-BUY at: {},  clientOrderId: {}, orderAmount: {} USDT ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, usdt);
+            log.error("====== {}-{}-StrategyCommon:  市价-BUY at: {},  clientOrderId: {}, orderAmount: {} USDT ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, usdt);
             buyRequest = CreateOrderRequest.spotBuyMarket(spot.getAccountId(), clientOrderId, spot.getSymbol(), usdt);
         }
 
@@ -161,7 +162,7 @@ public class StrategyCommon {
 
         //最小下单金额
         if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-            logger.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
+            log.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
             return;
         }
         spot.setOrderValue(usdt);
@@ -175,7 +176,7 @@ public class StrategyCommon {
 
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            logger.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
+            log.error("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
             return;
 
         }
@@ -184,9 +185,9 @@ public class StrategyCommon {
 
         if (type == 1) {
             // buy
-            logger.error("====== {}-{}-StrategyCommon:  限价-BUY at: {},  clientOrderId: {}, orderAmount: {} 币 ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, coinAmount);
+            log.error("====== {}-{}-StrategyCommon:  限价-BUY at: {},  clientOrderId: {}, orderAmount: {} 币 ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, coinAmount);
         } else {
-            logger.error("====== {}-{}-StrategyCommon:  市价-BUY at: {},  clientOrderId: {}, orderAmount: {} USDT ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, usdt);
+            log.error("====== {}-{}-StrategyCommon:  市价-BUY at: {},  clientOrderId: {}, orderAmount: {} USDT ======", spot.getSymbol(), strategy, buyPrice.toString(), clientOrderId, usdt);
         }
 
         buyOrderMap.putIfAbsent(clientOrderId, spot);
@@ -219,7 +220,7 @@ public class StrategyCommon {
         BigDecimal orderAmount;
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            logger.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
+            log.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
             orderAmount = spot.getLimitOrderMinOrderAmt();
         } else {
             orderAmount = coinAmount;
@@ -227,7 +228,7 @@ public class StrategyCommon {
 
         spot.setOrderAmount(orderAmount);
 
-        logger.error("====== {}-{}-StrategyCommon: SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+        log.error("====== {}-{}-StrategyCommon: SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
         CreateOrderRequest sellRequest;
         if (type == 1) {
             sellRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), sellPrice, orderAmount);
@@ -266,7 +267,7 @@ public class StrategyCommon {
         BigDecimal orderAmount;
         //最小下单量限制
         if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-            logger.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
+            log.error("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
             orderAmount = spot.getLimitOrderMinOrderAmt();
         } else {
             orderAmount = coinAmount;
@@ -276,9 +277,9 @@ public class StrategyCommon {
 
         CreateOrderRequest sellRequest;
         if (type == 1) {
-            logger.error("====== {}-{}-StrategyCommon: 限价-SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+            log.error("====== {}-{}-StrategyCommon: 限价-SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
         } else {
-            logger.error("====== {}-{}-StrategyCommon: 市价-SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+            log.error("====== {}-{}-StrategyCommon: 市价-SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
         }
         sellOrderMap.putIfAbsent(clientOrderId, spot);
 
@@ -305,7 +306,7 @@ public class StrategyCommon {
     public static void resetFeeAndProfit(String symbol, int currentStrategy) {
         profit = BigDecimal.ZERO;
         fee = BigDecimal.ZERO;
-        logger.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, currentStrategy, profit.toString(), fee.toString());
+        log.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, currentStrategy, profit.toString(), fee.toString());
     }
 
 
@@ -321,7 +322,7 @@ public class StrategyCommon {
                 accountId = account.getId();
             }
         });
-        logger.error("====== HuobiUtil-getAccountIdByType: {} accountId= {} ======", type, accountId);
+        log.error("====== HuobiUtil-getAccountIdByType: {} accountId= {} ======", type, accountId);
         return accountId > 0 ? accountId : -1;
     }
 
@@ -342,7 +343,7 @@ public class StrategyCommon {
                 }
             }
         });
-        logger.info("====== HuobiUtil-getBalanceByAccountId: {}-trade(账户可用余额): {} ======", quotaCurrency, bal.get().toString());
+        log.info("====== HuobiUtil-getBalanceByAccountId: {}-trade(账户可用余额): {} ======", quotaCurrency, bal.get().toString());
         return bal.get();
     }
 
@@ -377,7 +378,7 @@ public class StrategyCommon {
                 }
             }
         });
-        logger.info("====== HuobiUtil-getBalance4Push: {} ======", sb.toString());
+        log.info("====== HuobiUtil-getBalance4Push: {} ======", sb.toString());
         return sb.toString();
     }
 
@@ -393,7 +394,7 @@ public class StrategyCommon {
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getType().equalsIgnoreCase("trade")) {
-                logger.info("====== HuobiUtil-getBalanceByAccountId: point balance: {} ======", balance.toString());
+                log.info("====== HuobiUtil-getBalanceByAccountId: point balance: {} ======", balance.toString());
 
                 bal.set(balance.getBalance());
 
@@ -427,10 +428,10 @@ public class StrategyCommon {
 
             String body = HbdmHttpClient.getInstance().doPost2WX(Constants.WX_PUSHER_URL, params);
             if (body.contains("处理成功")) {
-                logger.error("=== HuobiUtil-weChatPusher strategy-{}-推送成功: {} ======", strategy, msg);
+                log.error("=== HuobiUtil-weChatPusher strategy-{}-推送成功: {} ======", strategy, msg);
             }
         } catch (Exception e) {
-            logger.error("=== HuobiUtil-weChatPusher: strategy-{}-无法推送消息 ======", strategy);
+            log.error("=== HuobiUtil-weChatPusher: strategy-{}-无法推送消息 ======", strategy);
             e.printStackTrace();
         }
     }
@@ -445,7 +446,7 @@ public class StrategyCommon {
 //            logger.info(marketTrade.toString());
             currentPrice.set(marketTrade.getPrice());
         });
-        logger.info("====== symbol: {}, currentPrice: {}", symbol, currentPrice);
+        log.info("====== symbol: {}, currentPrice: {}", symbol, currentPrice);
         return currentPrice.get();
     }
 
@@ -461,7 +462,7 @@ public class StrategyCommon {
                 .side(orderSide)
                 .build());
 
-        logger.error("====== HuobiUtil-cancelOpenOrders: 取消 {}-{} 的所有 {} 单,之前有 {} 个订单 ======", symbol, strategy, orderSide, orderList.size());
+        log.error("====== HuobiUtil-cancelOpenOrders: 取消 {}-{} 的所有 {} 单,之前有 {} 个订单 ======", symbol, strategy, orderSide, orderList.size());
         orderList.forEach(order -> CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId()));
     }
 
@@ -473,7 +474,7 @@ public class StrategyCommon {
     public static void cancelOrder(int strategy, String clientOrderId) {
         int code = CurrentAPI.getApiInstance().getTradeClient().cancelOrder(clientOrderId);
         if (code == 7) {
-            logger.error("=== HuobiUtil-cancelOrder: strategy-{}-{} canceled ======", strategy, clientOrderId);
+            log.error("=== HuobiUtil-cancelOrder: strategy-{}-{} canceled ======", strategy, clientOrderId);
         }
     }
 
@@ -512,7 +513,7 @@ public class StrategyCommon {
                 .symbol(symbol)
                 .side(side)
                 .build());
-        orderList.forEach(order -> logger.error("=== HuobiUtil-getOpenOrders: " + order.toString() + " ======"));
+        orderList.forEach(order -> log.error("=== HuobiUtil-getOpenOrders: " + order.toString() + " ======"));
         return orderList;
     }
 
@@ -543,7 +544,7 @@ public class StrategyCommon {
             }
         });
 
-        logger.error("====== HuobiUtil-getAllAvailableSymbols: 从主板,观察区,创业板 筛选出 {} 个交易对======", list.size());
+        log.error("====== HuobiUtil-getAllAvailableSymbols: 从主板,观察区,创业板 筛选出 {} 个交易对======", list.size());
 
         return list;
     }
