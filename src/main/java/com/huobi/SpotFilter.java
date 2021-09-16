@@ -27,16 +27,11 @@ public class SpotFilter implements Job {
     private static final double TIME_LIMIT = 3.0;
 
 
-    @Override
-    public void execute(JobExecutionContext context) {
-        filter();
-    }
-
     /**
      * 二次过滤
      * K线周期以 新加坡时间 为基准
      */
-    public static ConcurrentHashMap<String, Spot> filter() {
+    public static ConcurrentHashMap<String, Spot> filter(int apiCode) {
         log.info("====== SpotFilter-filter  : 开始过滤 ======");
         ConcurrentHashMap<String, Long> orderHistory = SpotRandom.getOrderHistory();
         AtomicBoolean qualified = new AtomicBoolean(false);
@@ -48,7 +43,7 @@ public class SpotFilter implements Job {
             Long currentTime = System.currentTimeMillis();
             if (!withinTimeLimit(buyTime, currentTime, TIME_LIMIT)) { //最近没下过单
                 orderHistory.remove(symbolStr);
-                List<Candlestick> klineList = CurrentAPI.getApiInstance().getMarketClient().getCandlestick(CandlestickRequest.builder()
+                List<Candlestick> klineList = CurrentAPI.getApiInstance(apiCode).getMarketClient().getCandlestick(CandlestickRequest.builder()
                         .symbol(symbolStr)
                         .interval(SpotRandom.getCandlestickIntervalEnum())
                         .size(SpotRandom.getNumberOfCandlestick())
@@ -86,6 +81,11 @@ public class SpotFilter implements Job {
         });
 
         return finalSymbolMap;
+    }
+
+    @Override
+    public void execute(JobExecutionContext context) {
+        filter(0);
     }
 
     /**

@@ -1,7 +1,10 @@
 package com.huobi;
 
+import com.huobi.client.req.trade.SubOrderUpdateV2Request;
 import com.huobi.constant.enums.CandlestickIntervalEnum;
 import com.huobi.model.trade.Order;
+import com.huobi.model.trade.OrderUpdateV2;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -22,6 +25,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @create: 9/14/21 5:38 PM
  */
 public class SpotRandom implements Job {
+    /**
+     * api key/ secret key
+     */
+    private static final int API_CODE = 0;
     /**
      * 决定了止盈百分比
      * 1: 2%
@@ -55,7 +62,7 @@ public class SpotRandom implements Job {
 
     static {
         // 第一次过滤, 得到 symbol string , like "btcusdt"
-        symbolList = StrategyCommon.getSymbolByConditions(QUOTE_CURRENCY);
+        symbolList = StrategyCommon.getSymbolByConditions(CURRENT_STRATEGY, QUOTE_CURRENCY);
     }
 
 
@@ -73,8 +80,8 @@ public class SpotRandom implements Job {
         log.error("====== SpotRandom.launch : 策略启动 ======");
         StopWatch clock = new StopWatch();
         clock.start(); // 计时开始
-        spotAccountId = StrategyCommon.getAccountIdByType("spot");
-        finalSymbolMap = SpotFilter.filter();
+        spotAccountId = StrategyCommon.getAccountIdByType(CURRENT_STRATEGY, "spot");
+        finalSymbolMap = SpotFilter.filter(API_CODE);
         log.error("====== SpotRandom.launch-{}: 按照 {} 个 {}  筛选出 {} 个symbol======", CURRENT_STRATEGY, NUMBER_OF_CANDLESTICK, candlestickIntervalEnum.getCode(), finalSymbolMap.size());
 
         // 为每个symbol 均分 等额的 usdt
@@ -102,11 +109,11 @@ public class SpotRandom implements Job {
 
     public static void doBuy(ConcurrentHashMap<String, Spot> finalSymbolMap) {
         try {
-            totalBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, QUOTE_CURRENCY);
+            totalBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, QUOTE_CURRENCY);
             log.info("====================================================================");
             log.info("====== SpotRandom-launch-{}: 当前账户余额: {} ======", CURRENT_STRATEGY, totalBalance);
             BigDecimal portion = totalBalance.divide(new BigDecimal(finalSymbolMap.size()), 2, RoundingMode.HALF_UP);
-            StrategyCommon.getSymbolInfoByName(finalSymbolMap, portion);
+            StrategyCommon.getSymbolInfoByName(CURRENT_STRATEGY, finalSymbolMap, portion);
             log.info("====== SpotRandom.launch-{}: 每个symbol分配 {} {} ======", CURRENT_STRATEGY, portion, QUOTE_CURRENCY);
             log.info("====== SpotRandom.launch-{}: 最终筛选得到 {} 个symbol ======", CURRENT_STRATEGY, finalSymbolMap.size());
             log.info("====== SpotRandom.launch-{}: 开始获取各个symbol的信息, 并按市价下单 ======", CURRENT_STRATEGY);
@@ -115,10 +122,11 @@ public class SpotRandom implements Job {
             for (Map.Entry<String, Spot> entry : finalSymbolMap.entrySet()) {
                 // buy-market  for every symbol
                 Spot spot = entry.getValue();
-                BigDecimal latestPrice = StrategyCommon.getCurrentTradPrice(spot.getSymbol());
+                BigDecimal latestPrice = StrategyCommon.getCurrentTradPrice(CURRENT_STRATEGY, spot.getSymbol());
                 spot.setAccountId(spotAccountId);
                 spot.setStartPrice(latestPrice);
                 StrategyCommon.buy(CURRENT_STRATEGY, spot, latestPrice, portion, 2);
+                StrategyCommon.setFee(portion);
             }
         } catch (Exception e) {
             log.error("======SpotRandom.doBuy : {} ======", e.getMessage());
@@ -130,18 +138,19 @@ public class SpotRandom implements Job {
      * 定时任务处理之前的买单,卖单, 防止 websocket 断掉,买/卖单 没有及时更新
      */
     public static void checkOrderStatus() {
+
         ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
         ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
         log.info("====== SpotRandom.checkOrderStatus buyOrderMap.size: {} ======", buyOrderMap.size());
         log.info("====== SpotRandom.checkOrderStatus sellOrderMap.size: {} ======", sellOrderMap.size());
-
+        int sellSize = sellOrderMap.size();
         Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
         Iterator<ConcurrentHashMap.Entry<String, Spot>> sellIterator = sellOrderMap.entrySet().iterator();
         while (buyIterator.hasNext()) {
             Map.Entry<String, Spot> entry = buyIterator.next();
             String clientOrderId = entry.getKey();
             Spot spot = entry.getValue();
-            Order buyOrder = StrategyCommon.getOrderByClientId(clientOrderId);
+            Order buyOrder = StrategyCommon.getOrderByClientId(CURRENT_STRATEGY, clientOrderId);
             if (buyOrder != null) {
                 balanceChanged = true;
                 if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
@@ -163,11 +172,11 @@ public class SpotRandom implements Job {
             Map.Entry<String, Spot> entry = sellIterator.next();
             String orderId = entry.getKey();
             Spot spot = entry.getValue();
-            Order sellOrder = StrategyCommon.getOrderByClientId(orderId);
+            Order sellOrder = StrategyCommon.getOrderByClientId(CURRENT_STRATEGY, orderId);
             if (sellOrder != null) {
                 if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
                     balanceChanged = true;
-                    StrategyCommon.setProfit(sellOrder.getFilledAmount().multiply(sellOrder.getPrice()));
+                    StrategyCommon.setProfit(sellOrder.getFilledCashAmount());
                     log.info("====== {}-{}-checkOrderStatus-卖单已成交 : {} ======", spot.getSymbol(), CURRENT_STRATEGY, sellOrder.toString());
                     sellIterator.remove();
                 } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
@@ -180,15 +189,23 @@ public class SpotRandom implements Job {
         }
 
         if (balanceChanged) {
-            totalBalance = StrategyCommon.getQuotaBalanceByAccountId(spotAccountId, QUOTE_CURRENCY);
+            totalBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, QUOTE_CURRENCY);
             balanceChanged = false;
         }
 
         // 允许接收3个订单没有卖出;&& 原订单数 > 3
         if (sellOrderMap.size() <= hold_size) {
             log.info("====== SpotRandom-checkOrderStatus: sellOrderMap.size: {}, 可以重新启动 ======", sellOrderMap.size());
-            if (sellOrderMap.size() == 0) {
+            if (sellSize != 0 && sellOrderMap.size() == 0) {
                 log.info("====== SpotRandom-checkOrderStatus: 卖单已全部成交 ======");
+                BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
+                pureProfit = pureProfit.setScale(2, RoundingMode.HALF_DOWN);
+                if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
+
+                    String sb = "SpotRandom 最新收益: " + pureProfit;
+                    StrategyCommon.weChatPusher(CURRENT_STRATEGY, sb, 2);
+                    log.error("====== SpotRandom.checkOrderStatus : {} ======", pureProfit);
+                }
             }
             launch();
         }

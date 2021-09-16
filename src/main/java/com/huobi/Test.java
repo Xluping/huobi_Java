@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Slf4j
 public class Test {
     static long accountId = 14086863L;
+    static int API_CODE = 1000;
 
     public static void main(String[] args) {
         Spot spot = new Spot();
@@ -40,7 +41,7 @@ public class Test {
         spot.setSymbol(spot.getBaseCurrency() + spot.getQuoteCurrency());
         spot.setAccountId(accountId);
 
-        List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
+        List<Symbol> symbolList = CurrentAPI.getApiInstance(API_CODE).getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
             if (symbol.getBaseCurrency().equalsIgnoreCase(spot.getBaseCurrency()) && symbol.getQuoteCurrency().equalsIgnoreCase(spot.getQuoteCurrency())) {
                 spot.setPricePrecision(symbol.getPricePrecision());
@@ -118,7 +119,7 @@ public class Test {
             } else {
                 sellRequest = CreateOrderRequest.spotSellMarket(spot.getAccountId(), clientOrderId, spot.getSymbol(), orderAmount);
             }
-            CurrentAPI.getApiInstance().getTradeClient().createOrder(sellRequest);
+            CurrentAPI.getApiInstance(API_CODE).getTradeClient().createOrder(sellRequest);
         } catch (Exception e) {
             log.error("======StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 99% ======", e.getMessage());
             sell(currentStrategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("0.99")), type);

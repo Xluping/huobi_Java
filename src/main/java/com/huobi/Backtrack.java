@@ -16,7 +16,7 @@ import java.io.*;
 @Slf4j
 public class Backtrack {
     static String symbol = "csprusdt";
-
+    static int API_CODE = 1000;
 
     public static void main(String[] args) {
         getPrice();
@@ -27,7 +27,7 @@ public class Backtrack {
 
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./logs/price.txt", true)), 1024);
 
-        CurrentAPI.getApiInstance().getMarketClient().subMarketTrade(SubMarketTradeRequest.builder().symbol(symbol).build(), (marketTradeEvent) -> {
+        CurrentAPI.getApiInstance(API_CODE).getMarketClient().subMarketTrade(SubMarketTradeRequest.builder().symbol(symbol).build(), (marketTradeEvent) -> {
             marketTradeEvent.getList().forEach(marketTrade -> {
                 log.info("======Backtrack.getPrice : {} ======", marketTrade.getPrice());
                 try {
