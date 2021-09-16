@@ -10,7 +10,7 @@ mkdir /root/jars/e
 mkdir /root/jars/0/
 
 ## m0
-mv /root/spot0-jar-with-dependencies.jar /root/jars/0/m0.jar
+mv /root/spot0-jar-with-dependencies.jar /root/jars/0/spot0-jar-with-dependencies.jar
 ## m1
 cp /root/spot1-jar-with-dependencies.jar /root/jars/a/a1-jar-with-dependencies.jar
 cp /root/spot1-jar-with-dependencies.jar /root/jars/b/b1-jar-with-dependencies.jar

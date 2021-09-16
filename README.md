@@ -1,3 +1,4 @@
+# v1
 <li>1. 目前只支持以 USDT 计价的币种
 <li>2. 高频,稳健,保守 三档区间的 USDT 配比 8:1:1,
     补仓区间30%,50%,70%,
@@ -55,3 +56,13 @@ server 运行:<br>
     4. if  huobi-command-util.jar is not running, start it: (alias  startutil) <br>
     
 <li> //todo: websocket 获得最新价格,放到kafka上, spot1 spot2 ... 进行消费
+<li> //todo: 持久化存储订单数据
+
+# v2
+websocket 价格监听,订单状态监听.
+
+# v3
+1. 按板块筛选
+2. 按照过去 * 个小时的收盘价选择, 持续跌的纳入考虑 (获取到的数据是以新加坡时间为准)
+3. 平均分配可用余额
+4. x 小时内,不重复下单.
