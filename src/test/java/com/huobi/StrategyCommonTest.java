@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StrategyCommonTest {
+    static int API_CODE = 1000;
     private Long accountId;
     String symbol = "htusdt";
     BigDecimal amount = new BigDecimal("5");
@@ -25,7 +26,7 @@ public class StrategyCommonTest {
 
     @Before
     public void setUp() throws Exception {
-        accountId = StrategyCommon.getAccountIdByType("spot");
+        accountId = StrategyCommon.getAccountIdByType(API_CODE, "spot");
 
     }
 
@@ -52,11 +53,11 @@ public class StrategyCommonTest {
 
 
             String symbol = "aaveusdt";
-            BigDecimal buyPrice = StrategyCommon.getCurrentTradPrice(symbol);
+            BigDecimal buyPrice = StrategyCommon.getCurrentTradPrice(API_CODE, symbol);
             String clientOrderId = "LUPING" + System.nanoTime();
 
             CreateOrderRequest buyLimitRequest = CreateOrderRequest.spotBuyLimit(accountId, clientOrderId, symbol, buyPrice, new BigDecimal("0.001"));
-            CurrentAPI.getApiInstance().getTradeClient().createOrder(buyLimitRequest);
+            CurrentAPI.getApiInstance(API_CODE).getTradeClient().createOrder(buyLimitRequest);
 //        buyOrderMap.putIfAbsent(clientOrderId, amount);
             System.out.println("====== create buy-limit order at:" + buyPrice.toString() + " ======");
             System.out.println("====== 下 BUY 单, clientOrderId: " + clientOrderId + " ======");
@@ -70,7 +71,7 @@ public class StrategyCommonTest {
 
     @Test
     public void getOpenOrders() {
-        List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
+        List<Order> orderList = CurrentAPI.getApiInstance(API_CODE).getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
                 .symbol(symbol)
                 .side(OrderSideEnum.BUY)
@@ -82,14 +83,14 @@ public class StrategyCommonTest {
 
     @Test
     public void cancelOrder() {
-        Long res = CurrentAPI.getApiInstance().getTradeClient().cancelOrder(345486007973454L);
+        Long res = CurrentAPI.getApiInstance(API_CODE).getTradeClient().cancelOrder(345486007973454L);
         System.out.println(" -- StrategyCommonTest.cancelOrder -- " + res);
     }
 
     @Test
     public void getPoint() {
         //
-        Point point = CurrentAPI.getApiInstance().getAccountClient().getPoint(PointRequest.builder().build());
+        Point point = CurrentAPI.getApiInstance(API_CODE).getAccountClient().getPoint(PointRequest.builder().build());
         System.out.println(" -- StrategyCommonTest.getPoint -- " + point.toString());
     }
 }
