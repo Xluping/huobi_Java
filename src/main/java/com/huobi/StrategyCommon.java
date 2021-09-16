@@ -144,7 +144,7 @@ public class StrategyCommon {
                 buyRequest = CreateOrderRequest.spotBuyMarket(spot.getAccountId(), clientOrderId, spot.getSymbol(), usdt);
             }
 
-            CurrentAPI.getApiInstance().getTradeClient().createOrder(buyRequest);
+            CurrentAPI.getApiInstance(strategy).getTradeClient().createOrder(buyRequest);
             buyOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
             log.error("====== {}-StrategyCommon.buy : 买入异常,按90%买入, {} ======", spot.getSymbol(), e.getMessage());
@@ -161,15 +161,15 @@ public class StrategyCommon {
      * 2:sell-market
      */
     @Synchronized
-    public static void sell(int currentStrategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount, int type) {
+    public static void sell(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount, int type) {
         // 计算卖出价格 buyPrice * (1+offset);
         try {
             BigDecimal sellPrice = null;
-            if (currentStrategy == 1) {
+            if (strategy == 1) {
                 sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
-            } else if (currentStrategy == 2) {
+            } else if (strategy == 2) {
                 sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_2);
-            } else if (currentStrategy == 3) {
+            } else if (strategy == 3) {
                 sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_3);
             }
             //自定义订单号
@@ -182,7 +182,7 @@ public class StrategyCommon {
             BigDecimal orderAmount;
             //最小下单量限制
             if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-                log.info("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), currentStrategy, spot.getLimitOrderMinOrderAmt());
+                log.info("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
                 orderAmount = spot.getLimitOrderMinOrderAmt();
             } else {
                 orderAmount = coinAmount;
@@ -190,18 +190,18 @@ public class StrategyCommon {
 
             spot.setOrderAmount(orderAmount);
 
-            log.info("====== {}-{}-StrategyCommon: SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), currentStrategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+            log.info("====== {}-{}-StrategyCommon: SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), strategy, sellPrice.toString(), clientOrderId, orderAmount, type);
             CreateOrderRequest sellRequest;
             if (type == 1) {
                 sellRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), sellPrice, orderAmount);
             } else {
                 sellRequest = CreateOrderRequest.spotSellMarket(spot.getAccountId(), clientOrderId, spot.getSymbol(), orderAmount);
             }
-            CurrentAPI.getApiInstance().getTradeClient().createOrder(sellRequest);
+            CurrentAPI.getApiInstance(strategy).getTradeClient().createOrder(sellRequest);
             sellOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
             log.error("====== {}-StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 99%的币 ======", spot.getSymbol(), e.getMessage());
-            sell(currentStrategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("0.99")), type);
+            sell(strategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("0.99")), type);
         }
 
     }
@@ -224,10 +224,10 @@ public class StrategyCommon {
         return fee;
     }
 
-    public static void resetFeeAndProfit(String symbol, int currentStrategy) {
+    public static void resetFeeAndProfit(int strategy, String symbol) {
         profit = BigDecimal.ZERO;
         fee = BigDecimal.ZERO;
-        log.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, currentStrategy, profit.toString(), fee.toString());
+        log.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, strategy, profit.toString(), fee.toString());
     }
 
 
@@ -236,8 +236,8 @@ public class StrategyCommon {
      * spot：现货账户
      * point: 点卡账户
      */
-    public static Long getAccountIdByType(String type) {
-        List<Account> accountList = CurrentAPI.getApiInstance().getAccountClient().getAccounts();
+    public static Long getAccountIdByType(int strategy, String type) {
+        List<Account> accountList = CurrentAPI.getApiInstance(strategy).getAccountClient().getAccounts();
         accountList.forEach(account -> {
             if (account.getType().equals(type) && "working".equals(account.getState())) {
                 accountId = account.getId();
@@ -253,9 +253,9 @@ public class StrategyCommon {
      * @param quotaCurrency 交易对
      * @return 返回 usdt 余额
      */
-    public static BigDecimal getQuotaBalanceByAccountId(Long accountId, String quotaCurrency) {
+    public static BigDecimal getQuotaBalanceByAccountId(int strategy, Long accountId, String quotaCurrency) {
         AtomicReference<BigDecimal> bal = new AtomicReference<>(BigDecimal.ZERO);
-        AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
+        AccountBalance accountBalance = CurrentAPI.getApiInstance(strategy).getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(quotaCurrency)) {
@@ -274,10 +274,10 @@ public class StrategyCommon {
      * @param quotaCurrency 交易对
      * @return 返回账户余额
      */
-    public static String getBalance4Push(Long accountId, String baseCurrency, String quotaCurrency) {
+    public static String getBalance4Push(int strategy, Long accountId, String baseCurrency, String quotaCurrency) {
         StringBuilder sb = new StringBuilder();
         AtomicReference<BigDecimal> bal = new AtomicReference<>(new BigDecimal("0"));
-        AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
+        AccountBalance accountBalance = CurrentAPI.getApiInstance(strategy).getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if (balance.getCurrency().equalsIgnoreCase(baseCurrency)) {
@@ -308,10 +308,10 @@ public class StrategyCommon {
      *
      * @param accountId 现货,点卡
      */
-    public static BigDecimal getBalanceByAccountId(Long accountId) {
+    public static BigDecimal getBalanceByAccountId(int strategy, Long accountId) {
         AtomicReference<BigDecimal> bal = new AtomicReference<>(BigDecimal.ZERO);
 
-        AccountBalance accountBalance = CurrentAPI.getApiInstance().getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
+        AccountBalance accountBalance = CurrentAPI.getApiInstance(strategy).getAccountClient().getAccountBalance(AccountBalanceRequest.builder().accountId(accountId).build());
         List<Balance> accountBalanceList = accountBalance.getList();
         accountBalanceList.forEach(balance -> {
             if ("trade".equalsIgnoreCase(balance.getType())) {
@@ -360,9 +360,9 @@ public class StrategyCommon {
     /**
      * @return 最近成交价
      */
-    public static BigDecimal getCurrentTradPrice(String symbol) {
+    public static BigDecimal getCurrentTradPrice(int strategy, String symbol) {
         AtomicReference<BigDecimal> currentPrice = new AtomicReference<>(new BigDecimal("0"));
-        List<MarketTrade> marketTradeList = CurrentAPI.getApiInstance().getMarketClient().getMarketTrade(MarketTradeRequest.builder().symbol(symbol).build());
+        List<MarketTrade> marketTradeList = CurrentAPI.getApiInstance(strategy).getMarketClient().getMarketTrade(MarketTradeRequest.builder().symbol(symbol).build());
         marketTradeList.forEach(marketTrade -> {
 //            logger.info(marketTrade.toString());
             currentPrice.set(marketTrade.getPrice());
@@ -375,16 +375,16 @@ public class StrategyCommon {
     /**
      * 重启后,取消当前交易对的所有orderSide方向的订单
      */
-    public static void cancelOpenOrders(Long accountId, String symbol, int strategy, OrderSideEnum orderSide) {
+    public static void cancelOpenOrders(int strategy, Long accountId, String symbol, OrderSideEnum orderSide) {
 
-        List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
+        List<Order> orderList = CurrentAPI.getApiInstance(strategy).getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
                 .symbol(symbol)
                 .side(orderSide)
                 .build());
 
         log.info("====== HuobiUtil-cancelOpenOrders: 取消 {}-{} 的所有 {} 单,之前有 {} 个订单 ======", symbol, strategy, orderSide, orderList.size());
-        orderList.forEach(order -> CurrentAPI.getApiInstance().getTradeClient().cancelOrder(order.getId()));
+        orderList.forEach(order -> CurrentAPI.getApiInstance(strategy).getTradeClient().cancelOrder(order.getId()));
     }
 
     /**
@@ -393,7 +393,7 @@ public class StrategyCommon {
      * 10 cancelling
      */
     public static void cancelOrder(int strategy, String clientOrderId) {
-        int code = CurrentAPI.getApiInstance().getTradeClient().cancelOrder(clientOrderId);
+        int code = CurrentAPI.getApiInstance(strategy).getTradeClient().cancelOrder(clientOrderId);
         if (code == 7) {
             log.info("=== HuobiUtil-cancelOrder: strategy-{}-{} canceled ======", strategy, clientOrderId);
         }
@@ -403,8 +403,8 @@ public class StrategyCommon {
     /**
      * 查询卖单
      */
-    public static Order getOrderByOrderId(Long orderId) {
-        return CurrentAPI.getApiInstance().getTradeClient().getOrder(orderId);
+    public static Order getOrderByOrderId(int strategy, Long orderId) {
+        return CurrentAPI.getApiInstance(strategy).getTradeClient().getOrder(orderId);
     }
 
     /**
@@ -412,9 +412,9 @@ public class StrategyCommon {
      *
      * @param clientOrderId 只有买单有自定义的clientOrderId
      */
-    public static Order getOrderByClientId(String clientOrderId) {
+    public static Order getOrderByClientId(int strategy, String clientOrderId) {
         try {
-            return CurrentAPI.getApiInstance().getTradeClient().getOrder(clientOrderId);
+            return CurrentAPI.getApiInstance(strategy).getTradeClient().getOrder(clientOrderId);
 
         } catch (Exception e) {
             // 避免各种原因下单错误, 导致整体逻辑异常
@@ -426,8 +426,8 @@ public class StrategyCommon {
      * @param side buy, sell
      * @return 某一方向上, 所有未成交订单.
      */
-    public static List<Order> getOpenOrders(Long accountId, String symbol, OrderSideEnum side) {
-        List<Order> orderList = CurrentAPI.getApiInstance().getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
+    public static List<Order> getOpenOrders(int strategy, Long accountId, String symbol, OrderSideEnum side) {
+        List<Order> orderList = CurrentAPI.getApiInstance(strategy).getTradeClient().getOpenOrders(OpenOrdersRequest.builder()
                 .accountId(accountId)
                 .symbol(symbol)
                 .side(side)
@@ -444,10 +444,10 @@ public class StrategyCommon {
      * potentials 观察区
      * pioneer  新币
      */
-    public static ArrayList<String> getSymbolByConditions(String quoteCurrency) {
+    public static ArrayList<String> getSymbolByConditions(int strategy, String quoteCurrency) {
 
         ArrayList<String> list = new ArrayList<>();
-        List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
+        List<Symbol> symbolList = CurrentAPI.getApiInstance(strategy).getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
             // 不包含  btc*3 之类的
             if (null == symbol.getUnderlying()) {
@@ -468,8 +468,8 @@ public class StrategyCommon {
         return list;
     }
 
-    public static void getSymbolInfoByName(ConcurrentHashMap<String, Spot> map, BigDecimal portion) {
-        List<Symbol> symbolList = CurrentAPI.getApiInstance().getGenericClient().getSymbols();
+    public static void getSymbolInfoByName(int strategy, ConcurrentHashMap<String, Spot> map, BigDecimal portion) {
+        List<Symbol> symbolList = CurrentAPI.getApiInstance(strategy).getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
             if (map.containsKey(symbol.getSymbol())) {
                 Spot spot = new Spot();
