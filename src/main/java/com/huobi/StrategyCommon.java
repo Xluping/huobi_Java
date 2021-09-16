@@ -41,30 +41,32 @@ public class StrategyCommon {
 
     static Logger log = LoggerFactory.getLogger(StrategyCommon.class);
 
-    @Synchronized
     public static void calculateBuyPriceList(int strategy, BigDecimal latestPrice, int scale) {
         priceList.clear();
-        if (strategy == 1) {
-            // 高频
-            calculateBuyPrice(1, latestPrice, scale, Constants.HIGH_RANGE_1, Constants.HIGH_COUNT_1, new BigDecimal("0"));
-            //稳健
-            calculateBuyPrice(1, latestPrice, scale, Constants.MEDIUM_RANGE_1 - Constants.HIGH_RANGE_1, Constants.MEDIUM_COUNT_1, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_1)));
-            //保守
-            calculateBuyPrice(1, latestPrice, scale, Constants.LOW_RANGE_1 - Constants.MEDIUM_RANGE_1, Constants.LOW_COUNT_1, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_1)));
-        } else if (strategy == 2) {
-            // 高频
-            calculateBuyPrice(2, latestPrice, scale, Constants.HIGH_RANGE_2, Constants.HIGH_COUNT_2, new BigDecimal("0"));
-            //稳健
-            calculateBuyPrice(2, latestPrice, scale, Constants.MEDIUM_RANGE_2 - Constants.HIGH_RANGE_2, Constants.MEDIUM_COUNT_2, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_2)));
-            //保守
-            calculateBuyPrice(2, latestPrice, scale, Constants.LOW_RANGE_2 - Constants.MEDIUM_RANGE_2, Constants.LOW_COUNT_2, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_2)));
-        } else if (strategy == 3) {
-            // 高频
-            calculateBuyPrice(3, latestPrice, scale, Constants.HIGH_RANGE_3, Constants.HIGH_COUNT_3, new BigDecimal("0"));
-            //稳健
-            calculateBuyPrice(3, latestPrice, scale, Constants.MEDIUM_RANGE_3 - Constants.HIGH_RANGE_3, Constants.MEDIUM_COUNT_3, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_3)));
-            //保守
-            calculateBuyPrice(3, latestPrice, scale, Constants.LOW_RANGE_3 - Constants.MEDIUM_RANGE_3, Constants.LOW_COUNT_3, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_3)));
+        switch (strategy) {
+            case 2:
+                // 高频
+                calculateBuyPrice(2, latestPrice, scale, Constants.HIGH_RANGE_2, Constants.HIGH_COUNT_2, new BigDecimal("0"));
+                //稳健
+                calculateBuyPrice(2, latestPrice, scale, Constants.MEDIUM_RANGE_2 - Constants.HIGH_RANGE_2, Constants.MEDIUM_COUNT_2, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_2)));
+                //保守
+                calculateBuyPrice(2, latestPrice, scale, Constants.LOW_RANGE_2 - Constants.MEDIUM_RANGE_2, Constants.LOW_COUNT_2, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_2)));
+                break;
+            case 3:
+                // 高频
+                calculateBuyPrice(3, latestPrice, scale, Constants.HIGH_RANGE_3, Constants.HIGH_COUNT_3, new BigDecimal("0"));
+                //稳健
+                calculateBuyPrice(3, latestPrice, scale, Constants.MEDIUM_RANGE_3 - Constants.HIGH_RANGE_3, Constants.MEDIUM_COUNT_3, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_3)));
+                //保守
+                calculateBuyPrice(3, latestPrice, scale, Constants.LOW_RANGE_3 - Constants.MEDIUM_RANGE_3, Constants.LOW_COUNT_3, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_3)));
+                break;
+            default:
+                // 高频
+                calculateBuyPrice(1, latestPrice, scale, Constants.HIGH_RANGE_1, Constants.HIGH_COUNT_1, new BigDecimal("0"));
+                //稳健
+                calculateBuyPrice(1, latestPrice, scale, Constants.MEDIUM_RANGE_1 - Constants.HIGH_RANGE_1, Constants.MEDIUM_COUNT_1, new BigDecimal(String.valueOf(Constants.HIGH_RANGE_1)));
+                //保守
+                calculateBuyPrice(1, latestPrice, scale, Constants.LOW_RANGE_1 - Constants.MEDIUM_RANGE_1, Constants.LOW_COUNT_1, new BigDecimal(String.valueOf(Constants.MEDIUM_RANGE_1)));
         }
 
     }
@@ -111,6 +113,8 @@ public class StrategyCommon {
      */
     @Synchronized
     public static void buy(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal usdt, int type) {
+        log.info("====== {}-{}-StrategyCommon:  参数-BUY: buyPrice:{}, usdt:{}, type:{} ======", spot.getSymbol(), strategy, buyPrice, usdt, type);
+
         try {
             //最小下单金额
             if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
@@ -162,15 +166,25 @@ public class StrategyCommon {
      */
     @Synchronized
     public static void sell(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount, int type) {
+        log.info("====== {}-{}-StrategyCommon:  SELL-参数:  buyPrice:{} ,coinAmount:{}, type:{} ======", spot.getSymbol(), strategy, buyPrice, coinAmount, type);
         // 计算卖出价格 buyPrice * (1+offset);
         try {
             BigDecimal sellPrice = null;
-            if (strategy == 1) {
-                sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
-            } else if (strategy == 2) {
-                sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_2);
-            } else if (strategy == 3) {
-                sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_3);
+            switch (strategy) {
+                case 1:
+                    sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
+
+                    break;
+                case 2:
+                    sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_2);
+
+                    break;
+                case 3:
+                    sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_3);
+
+                    break;
+                default:
+                    sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
             }
             //自定义订单号
             String clientOrderId = spot.getSymbol() + System.nanoTime();
@@ -190,7 +204,7 @@ public class StrategyCommon {
 
             spot.setOrderAmount(orderAmount);
 
-            log.info("====== {}-{}-StrategyCommon: SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), strategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+            log.info("====== {}-{}-StrategyCommon:  SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), strategy, sellPrice.toString(), clientOrderId, orderAmount, type);
             CreateOrderRequest sellRequest;
             if (type == 1) {
                 sellRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), sellPrice, orderAmount);

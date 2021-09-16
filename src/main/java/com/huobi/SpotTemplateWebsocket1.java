@@ -39,7 +39,8 @@ public class SpotTemplateWebsocket1 implements Job {
     private static String PORTION;
     // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改 CURRENT_STRATEGY
     private static final int CURRENT_STRATEGY = 1;
-
+    // TODO: 9/17/21 测试用100 正式  API_CODE = 1/2/3
+    private static final int API_CODE = 1;
 
     private static Long spotAccountId = 14086863L;
     private static Long pointAccountId = 14424186L;
@@ -58,8 +59,11 @@ public class SpotTemplateWebsocket1 implements Job {
     private static final Logger logger = LoggerFactory.getLogger(SpotTemplateWebsocket1.class);
 
     public static void main(String[] args) {
+
+        // TODO: 9/17/21 product
         BASE_CURRENCY = args[0];
         PORTION = args[1];
+        // TODO: 9/17/21 test
 //        BASE_CURRENCY = "cspr";
 //        PORTION = "500";
         if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
@@ -75,17 +79,100 @@ public class SpotTemplateWebsocket1 implements Job {
         logger.info("====== main:  SYMBOL = {} ======", SYMBOL);
         logger.info("====== main:  PORTION = {} ======", PORTION);
         logger.info("====== main:  STRATEGY = {} ======", CURRENT_STRATEGY);
+        //订单状态监听
+        orderListener();
 
         SpotTemplateWebsocket1 spotBuyer = new SpotTemplateWebsocket1();
         spotBuyer.init();
         JobManagement jobManagement = new JobManagement();
         // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改
         jobManagement.addJob("10 0/1 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
-//        jobManagement.addJob("20 0/1 * * *  ?", SpotTemplateWebsocket2.class, SYMBOL);
-//        jobManagement.addJob("30 0/1 * * *  ?", SpotTemplateWebsocket3.class, SYMBOL);
+//        jobManagement.addJob("20 0/1 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
+//        jobManagement.addJob("30 0/1 * * *  ?", SpotTemplateWebsocket1.class, SYMBOL);
 
         jobManagement.startJob();
 
+    }
+
+    /**
+     * websocket
+     * 监听订单状态
+     */
+    public static void orderListener() {
+        CurrentAPI.getApiInstance(API_CODE).getTradeClient().subOrderUpdateV2(SubOrderUpdateV2Request.builder().symbols("*").build(), orderUpdateV2Event -> {
+//            System.out.println(" -- SpotTemplateWebsocket1.orderListener -- " + orderUpdateV2Event.toString());
+            ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
+            ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
+            OrderUpdateV2 order = orderUpdateV2Event.getOrderUpdate();
+            String clientOrderId = order.getClientOrderId();
+            Long orderId = order.getOrderId();
+
+
+            // 确保多个策略的订单不会互相影响
+            if (buyOrderMap.containsKey(clientOrderId)
+                    || sellOrderMap.containsKey(clientOrderId)
+                    || sellOrderMap.containsKey(String.valueOf(orderId))
+            ) {
+                // 已成交
+                if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(order.getOrderStatus())) {
+                    balanceChanged = true;
+                    BigDecimal orderTradePrice = order.getTradePrice();
+                    BigDecimal orderTradeVolume = order.getTradeVolume();
+                    logger.info("====== {}-{}-{}-已成交 : price: {}, amount: {} ======", SYMBOL, CURRENT_STRATEGY, order.getType(), orderTradePrice, orderTradeVolume);
+                    if (OrderTypeEnum.BUY_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.BUY_MARKET.getName().equalsIgnoreCase(order.getType())) {
+                        orderCount.incrementAndGet();
+                        StrategyCommon.setFee(orderTradePrice.multiply(orderTradeVolume));
+                        buyOrderMap.remove(clientOrderId);
+                        logger.info("====== SpotTemplateWebsocket1.orderListener : remove clientOrderId: {} ======", clientOrderId);
+                        StrategyCommon.sell(API_CODE, spot, orderTradePrice, orderTradeVolume, 1);
+                    } else if (OrderTypeEnum.SELL_LIMIT.getName().equalsIgnoreCase(order.getType())) {
+                        orderCount.decrementAndGet();
+                        StrategyCommon.setProfit(orderTradePrice.multiply(orderTradeVolume));
+                        if (StringUtils.isNotBlank(clientOrderId)) {
+                            sellOrderMap.remove(clientOrderId);
+                        } else {
+                            sellOrderMap.remove(String.valueOf(orderId));
+                        }
+
+                    }
+                } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(order.getOrderStatus())) {
+                    logger.info("====== {}-{}-{}-已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, order.getType(), order.toString());
+                    if (OrderTypeEnum.BUY_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.BUY_MARKET.getName().equalsIgnoreCase(order.getType())) {
+                        balanceChanged = true;
+                        orderCount.decrementAndGet();
+                        buyOrderMap.remove(clientOrderId);
+                    }
+                    if (OrderTypeEnum.SELL_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.SELL_MARKET.getName().equalsIgnoreCase(order.getType())) {
+                        orderCount.incrementAndGet();
+                        if (StringUtils.isNotBlank(clientOrderId)) {
+                            sellOrderMap.remove(clientOrderId);
+                        } else {
+                            sellOrderMap.remove(String.valueOf(orderId));
+                        }
+                        logger.info("====== SpotTemplateWebsocket1-orderListener: 现有卖单 {} 个 ======", sellOrderMap.size());
+
+                    }
+
+                }
+
+            } else {
+                boolean a = OrderStatusEnum.FILLED.getName().equalsIgnoreCase(order.getOrderStatus());
+                boolean b = OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(order.getOrderStatus());
+                boolean c = OrderTypeEnum.BUY_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.BUY_MARKET.getName().equalsIgnoreCase(order.getType());
+                // 其他币种的买单/卖单成交, 限价买单取消,都会影响余额
+                if (a || b && c) {
+                    balanceChanged = true;
+                }
+            }
+            //
+
+            if (balanceChanged) { //订单成交后,更新余额
+                usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
+                balanceChanged = false;
+            }
+
+
+        });
     }
 
     /**
@@ -93,12 +180,10 @@ public class SpotTemplateWebsocket1 implements Job {
      */
     public void init() {
         try {
-            //订单状态监听
-            orderListener();
-            Thread.sleep(3000);
+
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
-            StrategyCommon.cancelOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.BUY);
+            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
             launch();
             priceListener();
@@ -113,7 +198,7 @@ public class SpotTemplateWebsocket1 implements Job {
         spot.setBaseCurrency(BASE_CURRENCY);
         spot.setQuoteCurrency(QUOTE_CURRENCY);
         spot.setSymbol(SYMBOL);
-        List<Symbol> symbolList = CurrentAPI.getApiInstance(CURRENT_STRATEGY).getGenericClient().getSymbols();
+        List<Symbol> symbolList = CurrentAPI.getApiInstance(API_CODE).getGenericClient().getSymbols();
         symbolList.forEach(symbol -> {
             if (symbol.getBaseCurrency().equalsIgnoreCase(spot.getBaseCurrency()) && symbol.getQuoteCurrency().equalsIgnoreCase(spot.getQuoteCurrency())) {
                 spot.setPricePrecision(symbol.getPricePrecision());
@@ -124,11 +209,11 @@ public class SpotTemplateWebsocket1 implements Job {
             }
         });
 
-        spotAccountId = StrategyCommon.getAccountIdByType(CURRENT_STRATEGY, "spot");
-        pointAccountId = StrategyCommon.getAccountIdByType(CURRENT_STRATEGY, "point");
+        spotAccountId = StrategyCommon.getAccountIdByType(API_CODE, "spot");
+        pointAccountId = StrategyCommon.getAccountIdByType(API_CODE, "point");
         spot.setAccountId(spotAccountId);
 
-        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, spot.getQuoteCurrency());
+        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
         logger.info("{}-{}-prepareSpot: 分配到的仓位: {} ======", SYMBOL, currentStrategy, PORTION);
         spot.setTotalBalance(totalBalance);
         BigDecimal highBalance;
@@ -215,7 +300,7 @@ public class SpotTemplateWebsocket1 implements Job {
 
     public void launch() {
 
-        latestPrice = StrategyCommon.getCurrentTradPrice(CURRENT_STRATEGY, spot.getSymbol());
+        latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
         spot.setStartPrice(latestPrice);
         if (spot.getDoublePrice() == null) {
             spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
@@ -225,20 +310,19 @@ public class SpotTemplateWebsocket1 implements Job {
         }
         logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, CURRENT_STRATEGY, spot);
         logger.info("====== {}-{}-launch price: {} ======", SYMBOL, CURRENT_STRATEGY, latestPrice);
-        StrategyCommon.calculateBuyPriceList(CURRENT_STRATEGY, latestPrice, spot.getPricePrecision());
-        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, spot.getQuoteCurrency());
+        StrategyCommon.calculateBuyPriceList(API_CODE, latestPrice, spot.getPricePrecision());
+        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
-            StrategyCommon.buy(CURRENT_STRATEGY, spot, latestPrice, spot.getPortionHigh(), 2);
+            StrategyCommon.buy(API_CODE, spot, latestPrice, spot.getPortionHigh(), 2);
             checkOrderStatus();
         } else {
             logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
         }
 
-        List<Order> sellOrders = StrategyCommon.getOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.SELL);
+        List<Order> sellOrders = StrategyCommon.getOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.SELL);
         logger.info("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, CURRENT_STRATEGY, sellOrders.size());
     }
-
 
     /**
      * websocket
@@ -246,42 +330,41 @@ public class SpotTemplateWebsocket1 implements Job {
      */
     public void priceListener() {
         try {
-            CurrentAPI.getApiInstance(CURRENT_STRATEGY).getMarketClient().subMarketTrade(SubMarketTradeRequest.builder().symbol(SYMBOL).build(), (marketTradeEvent) -> marketTradeEvent.getList().forEach(marketTrade -> {
+            CurrentAPI.getApiInstance(API_CODE).getMarketClient().subMarketTrade(SubMarketTradeRequest.builder().symbol(SYMBOL).build(), (marketTradeEvent) -> marketTradeEvent.getList().forEach(marketTrade -> {
                 StopWatch clock = new StopWatch();
                 clock.start(); // 计时开始
                 latestPrice = marketTrade.getPrice();
                 //价格三倍,WeChat提示并退出
                 if (latestPrice.compareTo(spot.getDoublePrice()) >= 0) {
-                    StrategyCommon.weChatPusher(CURRENT_STRATEGY, "价格翻倍,退出", 2);
+                    StrategyCommon.weChatPusher(API_CODE, "价格翻倍,退出", 2);
                     System.exit(0);
                 }
-
 
                 ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
                 ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
                 //本轮买单已全部卖出. 重启应用
                 // 启动时,余额不足 不执行此逻辑, insufficientFound=true
                 if (sellOrderMap.size() == 0 && !insufficientFound) {
-                    logger.info("====== {}-{}-priceListener-开始清理残余买单.======", SYMBOL, CURRENT_STRATEGY);
+                    logger.info("====== {}-{}-priceListener-开始清理残余买单.insufficientFound: {} ======", SYMBOL, CURRENT_STRATEGY, insufficientFound);
                     Iterator<Map.Entry<String, Spot>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
 
                     while (iterator.hasNext()) {
                         Map.Entry<String, Spot> entry = iterator.next();
                         String clientId = entry.getKey();
-                        Order remainOrder = StrategyCommon.getOrderByClientId(CURRENT_STRATEGY, clientId);
+                        Order remainOrder = StrategyCommon.getOrderByClientId(API_CODE, clientId);
                         assert remainOrder != null;
                         logger.info("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
-                        StrategyCommon.cancelOrder(CURRENT_STRATEGY, clientId);
+                        StrategyCommon.cancelOrder(API_CODE, clientId);
                         iterator.remove();
                     }
                     BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                     pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
-                    BigDecimal pointBalance = StrategyCommon.getBalanceByAccountId(CURRENT_STRATEGY, pointAccountId);
+                    BigDecimal pointBalance = StrategyCommon.getBalanceByAccountId(API_CODE, pointAccountId);
                     if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
 
                         String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
                                 " 点卡余额: " + pointBalance.toString();
-                        StrategyCommon.weChatPusher(CURRENT_STRATEGY, sb, 2);
+                        StrategyCommon.weChatPusher(API_CODE, sb, 2);
                     }
                     orderCount.set(-1);
                 }
@@ -344,13 +427,13 @@ public class SpotTemplateWebsocket1 implements Job {
 
                         if (usdtBalance.compareTo(usdtPortion) >= 0) {
                             insufficientFound = false;
-                            StrategyCommon.buy(CURRENT_STRATEGY, spot, priceList.get(i.get()), usdtPortion, 1);
+                            StrategyCommon.buy(API_CODE, spot, priceList.get(i.get()), usdtPortion, 1);
                         } else {
                             insufficientFound = true;
                             ticker.getAndAdd(1);
                             if (ticker.get() % 30 == 0) {
                                 ticker.getAndSet(1);
-                                usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, spot.getQuoteCurrency());
+                                usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
                                 logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
                             }
                         }
@@ -367,146 +450,87 @@ public class SpotTemplateWebsocket1 implements Job {
     }
 
     /**
-     * websocket
-     * 监听订单状态
-     */
-    public void orderListener() {
-        CurrentAPI.getApiInstance(CURRENT_STRATEGY).getTradeClient().subOrderUpdateV2(SubOrderUpdateV2Request.builder().symbols(SYMBOL).build(), orderUpdateV2Event -> {
-//            System.out.println(" -- SpotTemplateWebsocket1.orderListener -- " + orderUpdateV2Event.toString());
-            ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
-            ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
-            OrderUpdateV2 order = orderUpdateV2Event.getOrderUpdate();
-            String clientOrderId = order.getClientOrderId();
-            Long orderId = order.getOrderId();
-
-
-            // 确保多个策略的订单不会互相影响
-            if (buyOrderMap.containsKey(clientOrderId)
-                    || sellOrderMap.containsKey(clientOrderId)
-                    || sellOrderMap.containsKey(String.valueOf(orderId))
-            ) {
-                // 已成交
-                if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(order.getOrderStatus())) {
-                    balanceChanged = true;
-                    BigDecimal orderTradePrice = order.getTradePrice();
-                    BigDecimal orderTradeVolume = order.getTradeVolume();
-                    logger.info("====== {}-{}-{}已成交 : price: {}, amount: {} ======", SYMBOL, CURRENT_STRATEGY, order.getType(), orderTradePrice, orderTradeVolume);
-                    if (OrderTypeEnum.BUY_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.BUY_MARKET.getName().equalsIgnoreCase(order.getType())) {
-                        orderCount.incrementAndGet();
-                        StrategyCommon.setFee(orderTradePrice.multiply(orderTradeVolume));
-                        buyOrderMap.remove(clientOrderId);
-                        StrategyCommon.sell(CURRENT_STRATEGY, spot, orderTradePrice, orderTradeVolume, 1);
-                    } else if (OrderTypeEnum.SELL_LIMIT.getName().equalsIgnoreCase(order.getType())) {
-                        orderCount.decrementAndGet();
-                        StrategyCommon.setProfit(orderTradePrice.multiply(orderTradeVolume));
-                        if (StringUtils.isNotBlank(clientOrderId)) {
-                            sellOrderMap.remove(clientOrderId);
-                        } else {
-                            sellOrderMap.remove(String.valueOf(orderId));
-                        }
-
-                    }
-                } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(order.getOrderStatus())) {
-                    logger.info("====== {}-{}-{}-已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, order.getType(), order.toString());
-                    if (OrderTypeEnum.BUY_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.BUY_MARKET.getName().equalsIgnoreCase(order.getType())) {
-                        balanceChanged = true;
-                        orderCount.decrementAndGet();
-                        buyOrderMap.remove(clientOrderId);
-                    }
-                    if (OrderTypeEnum.SELL_LIMIT.getName().equalsIgnoreCase(order.getType()) || OrderTypeEnum.SELL_MARKET.getName().equalsIgnoreCase(order.getType())) {
-                        orderCount.incrementAndGet();
-                        if (StringUtils.isNotBlank(clientOrderId)) {
-                            sellOrderMap.remove(clientOrderId);
-                        } else {
-                            sellOrderMap.remove(String.valueOf(orderId));
-                        }
-                        logger.info("====== SpotTemplateWebsocket1-orderListener: 现有卖单 {} 个 ======", sellOrderMap.size());
-
-                    }
-
-                }
-
-            }
-            if (balanceChanged) { //订单成交后,更新余额
-                usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, spot.getQuoteCurrency());
-                balanceChanged = false;
-            }
-
-
-        });
-    }
-
-    /**
      * 定时任务处理之前的买单,卖单, 防止 websocket 断掉,买/卖单 没有及时更新
      */
     public void checkOrderStatus() {
-        ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
-        ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
-        Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
-        Iterator<ConcurrentHashMap.Entry<String, Spot>> sellIterator = sellOrderMap.entrySet().iterator();
-        while (buyIterator.hasNext()) {
-            Map.Entry<String, Spot> entry = buyIterator.next();
-            String clientId = entry.getKey();
-            boolean isLimit = true;
-            Order buyOrder = StrategyCommon.getOrderByClientId(CURRENT_STRATEGY, clientId);
-            if (buyOrder != null) {
-                if (!clientId.contains(spot.getSymbol())) {
-                    //buy market
-                    isLimit = false;
-                }
+        try {
 
 
-                if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
-                    balanceChanged = true;
-                    logger.info("====== {}-{}-checkOrderStatus-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
-                    BigDecimal buyAmount = buyOrder.getFilledAmount();
-                    BigDecimal buyAtPrice;
-                    if (isLimit) {
+            ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
+            ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
+            Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
+            Iterator<ConcurrentHashMap.Entry<String, Spot>> sellIterator = sellOrderMap.entrySet().iterator();
+            while (buyIterator.hasNext()) {
+                Map.Entry<String, Spot> entry = buyIterator.next();
+                String clientId = entry.getKey();
 
-                        buyAtPrice = new BigDecimal(String.valueOf(buyOrder.getPrice()));
-                    } else {
-                        buyAtPrice = StrategyCommon.getCurrentTradPrice(CURRENT_STRATEGY, SYMBOL);
+                Order buyOrder = StrategyCommon.getOrderByClientId(API_CODE, clientId);
+                if (buyOrder != null) {
+
+
+                    if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
+                        balanceChanged = true;
+                        logger.info("====== {}-{}-checkOrderStatus-买单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
+                        BigDecimal buyAmount = buyOrder.getFilledAmount();
+                        BigDecimal buyAtPrice;
+
+                        // 市价 买单订单信息中没有买入价格
+                        if (buyOrder.getPrice() == null || buyOrder.getPrice().compareTo(BigDecimal.ZERO) == 0) {
+                            buyAtPrice = StrategyCommon.getCurrentTradPrice(API_CODE, SYMBOL).multiply(new BigDecimal("1.01"));
+                        } else {
+                            buyAtPrice = buyOrder.getPrice();
+
+                        }
+
+                        StrategyCommon.setFee(buyOrder.getFilledCashAmount());
+
+                        buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
+
+                        StrategyCommon.sell(API_CODE, spot, buyAtPrice, buyAmount, 1);
+                        orderCount.incrementAndGet();
+                        buyIterator.remove();
+                    } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
+                        balanceChanged = true;
+                        logger.info("====== {}-{}-checkOrderStatus-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
+                        orderCount.decrementAndGet();
+                        buyIterator.remove();
                     }
-                    StrategyCommon.setFee(buyOrder.getFilledCashAmount());
-
-                    buyAtPrice = buyAtPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
-
-                    StrategyCommon.sell(CURRENT_STRATEGY, spot, buyAtPrice, buyAmount, 1);
-                    orderCount.incrementAndGet();
-                    buyIterator.remove();
-                } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
-                    balanceChanged = true;
-                    logger.info("====== {}-{}-checkOrderStatus-买单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, buyOrder.toString());
-                    orderCount.decrementAndGet();
+                } else {
                     buyIterator.remove();
                 }
-            } else {
-                buyIterator.remove();
+
             }
 
-        }
+            while (sellIterator.hasNext()) {
+                Map.Entry<String, Spot> entry = sellIterator.next();
+                String orderId = entry.getKey();
+                Order sellOrder = StrategyCommon.getOrderByClientId(API_CODE, orderId);
+                if (sellOrder != null) {
+                    if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
+                        balanceChanged = true;
+                        StrategyCommon.setProfit(sellOrder.getFilledCashAmount());
+                        logger.info("====== {}-{}-checkOrderStatus-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
+                        orderCount.decrementAndGet();
+                        sellIterator.remove();
+                    } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
+                        logger.info("====== {}-{}-checkOrderStatus-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
+                        orderCount.incrementAndGet();
+                        sellIterator.remove();
+                    }
 
-        while (sellIterator.hasNext()) {
-            Map.Entry<String, Spot> entry = sellIterator.next();
-            String orderId = entry.getKey();
-            Order sellOrder = StrategyCommon.getOrderByClientId(CURRENT_STRATEGY, orderId);
-            if (sellOrder != null) {
-                if (OrderStatusEnum.FILLED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
-                    balanceChanged = true;
-                    StrategyCommon.setProfit(sellOrder.getFilledCashAmount());
-                    logger.info("====== {}-{}-checkOrderStatus-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
-                    orderCount.decrementAndGet();
-                    sellIterator.remove();
-                } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
-                    logger.info("====== {}-{}-checkOrderStatus-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
-                    orderCount.incrementAndGet();
+                } else {
                     sellIterator.remove();
                 }
-
-            } else {
-                sellIterator.remove();
             }
+
+            if (balanceChanged) { //订单成交后,更新余额
+                usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
+                balanceChanged = false;
+            }
+        } catch (Exception e) {
+            logger.error("====== SpotTemplateWebsocket1.checkOrderStatus : {} ======", e.getMessage());
         }
+
 
     }
 
