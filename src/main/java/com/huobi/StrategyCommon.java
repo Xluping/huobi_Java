@@ -114,7 +114,7 @@ public class StrategyCommon {
         try {
             //最小下单金额
             if (usdt.compareTo(spot.getMinOrderValue()) < 0) {
-                log.info("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
+                log.info("====== {}-{}-buy: 所剩 usdt < {} ,等待卖单成交  ======", spot.getSymbol(), strategy, spot.getMinOrderValue());
                 return;
             }
             spot.setOrderValue(usdt);
@@ -127,7 +127,7 @@ public class StrategyCommon {
 
             //最小下单量限制
             if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
-                log.info("====== {}-{}-buy: 所剩 usdt 余额不足,等待卖单成交  ======", spot.getSymbol(), strategy);
+                log.info("====== {}-{}-buy: 下单量 < {} ,等待卖单成交  ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
                 return;
 
             }
@@ -147,7 +147,9 @@ public class StrategyCommon {
             CurrentAPI.getApiInstance().getTradeClient().createOrder(buyRequest);
             buyOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
-            log.error("======StrategyCommon.buy : 买入时发生异常 {} ======", e.getMessage());
+            log.error("====== {}-StrategyCommon.buy : 买入异常,按90%买入, {} ======", spot.getSymbol(), e.getMessage());
+            // 因为价格在波动,其他买单可能按照市场价下单时,可能占用更多的usdt,导致当前订单余额不足
+            buy(strategy, spot, buyPrice, usdt.multiply(new BigDecimal("0.9")), type);
         }
 
 
@@ -198,7 +200,7 @@ public class StrategyCommon {
             CurrentAPI.getApiInstance().getTradeClient().createOrder(sellRequest);
             sellOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
-            log.error("======StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 99%的币 ======", e.getMessage());
+            log.error("====== {}-StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 99%的币 ======", spot.getSymbol(), e.getMessage());
             sell(currentStrategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("0.99")), type);
         }
 
@@ -461,7 +463,7 @@ public class StrategyCommon {
             }
         });
 
-        log.info("====== HuobiUtil-getAllAvailableSymbols: 从 观察区,创业板 筛选出 {} 个交易对======", list.size());
+        log.info("====== HuobiUtil-getAllAvailableSymbols: 从 观察区,创业板 筛选出 {} 个交易对 ======", list.size());
 
         return list;
     }
