@@ -96,8 +96,6 @@ public final class CurrentAPI {
                 currentAPI = currentAPI_default;
                 log.error("====== CurrentAPI.getApiInstance : using default api key and secret key ======");
         }
-        log.info("====== CurrentAPI.getApiInstance: {} ======", currentStrategy);
-
         return currentAPI;
 
     }
