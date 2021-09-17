@@ -238,10 +238,10 @@ public class StrategyCommon {
         return fee;
     }
 
-    public static void resetFeeAndProfit(int strategy, String symbol) {
+    public static void resetFeeAndProfit(int strategy) {
         profit = BigDecimal.ZERO;
         fee = BigDecimal.ZERO;
-        log.info("====== {}-{}-StrategyCommon-resetFeeAndProfit : profit= {} , fee= {} ======", symbol, strategy, profit.toString(), fee.toString());
+        log.info("====== StrategyCommon-resetFeeAndProfit-{} : profit= {} , fee= {} ======", strategy, profit.toString(), fee.toString());
     }
 
 

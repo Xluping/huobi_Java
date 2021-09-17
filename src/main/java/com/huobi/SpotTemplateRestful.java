@@ -212,7 +212,7 @@ public class SpotTemplateRestful implements Job {
     }
 
     public void launch(int currentStrategy) {
-        StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY, SYMBOL);
+        StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
         logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, currentStrategy, spot);
         latestPrice = StrategyCommon.getCurrentTradPrice(CURRENT_STRATEGY, spot.getSymbol());
         logger.info("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
