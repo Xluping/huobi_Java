@@ -127,7 +127,6 @@ public class SpotRandom implements Job {
                 spot.setAccountId(spotAccountId);
                 spot.setStartPrice(latestPrice);
                 StrategyCommon.buy(API_CODE, spot, latestPrice, portion, 2);
-                StrategyCommon.setFee(portion);
             }
         } catch (Exception e) {
             log.error("======SpotRandom.doBuy-{} : {} ======", CURRENT_STRATEGY, e.getMessage());
@@ -158,6 +157,7 @@ public class SpotRandom implements Job {
                     log.info("====== checkOrderStatus-{} 买单已成交 : {} ======", CURRENT_STRATEGY, buyOrder.toString());
                     BigDecimal buyAmount = buyOrder.getFilledAmount();
                     buyIterator.remove();
+                    StrategyCommon.setFee(buyOrder.getFilledCashAmount());
                     orderHistory.put(buyOrder.getSymbol(), System.currentTimeMillis());
                     StrategyCommon.sell(API_CODE, spot, spot.getStartPrice(), buyAmount, 1);
                 } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(buyOrder.getState().trim())) {
