@@ -17,10 +17,8 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -278,12 +276,11 @@ public class SpotTemplateWebsocket3 implements Job {
                     }
                     BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                     pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
-                    BigDecimal pointBalance = StrategyCommon.getBalanceByAccountId(API_CODE, pointAccountId);
                     if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
-
-                        String sb = SYMBOL + " 最新收益: " + pureProfit + "; " +
-                                " 点卡余额: " + pointBalance.toString();
-                        StrategyCommon.weChatPusher(API_CODE, sb, 2);
+                        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                        String sb = time + " : " + pureProfit + " " + SYMBOL;
+                        StrategyCommon.saveToFile(sb);
+                        StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     }
                     orderCount.set(-1);
                 }

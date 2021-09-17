@@ -15,6 +15,10 @@ import lombok.Synchronized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -499,6 +503,19 @@ public class StrategyCommon {
                 map.replace(symbol.getSymbol(), spot);
             }
         });
+
+    }
+
+    public static void saveToFile(String str) {
+        try {
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./logs/profit.txt", true)), 1024);
+            bw.write(str);
+            bw.newLine();
+            bw.flush();
+            bw.close();
+        } catch (Exception e) {
+            log.error("====== StrategyCommon.saveToFile 写入文件出错: {} ======", e.getMessage());
+        }
 
     }
 
