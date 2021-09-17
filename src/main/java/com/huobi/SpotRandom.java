@@ -209,7 +209,7 @@ public class SpotRandom implements Job {
                     String sb = time + " : " + pureProfit;
                     StrategyCommon.saveToFile(sb);
                     StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
-                    log.error("====== SpotRandom.checkOrderStatus-{} : {} ======", CURRENT_STRATEGY, pureProfit);
+                    log.error("====== SpotRandom.checkOrderStatus-{} profit: {} ======", CURRENT_STRATEGY, pureProfit);
                 }
             }
             launch();
