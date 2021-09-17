@@ -205,6 +205,7 @@ public class SpotRandom implements Job {
 
                     String sb = "SpotRandom 最新收益: " + pureProfit;
                     StrategyCommon.weChatPusher(API_CODE, sb, 2);
+                    StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     log.error("====== SpotRandom.checkOrderStatus-{} : {} ======", CURRENT_STRATEGY, pureProfit);
                 }
             }
