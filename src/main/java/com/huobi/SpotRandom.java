@@ -5,6 +5,7 @@ import com.huobi.constant.enums.CandlestickIntervalEnum;
 import com.huobi.model.trade.Order;
 import com.huobi.model.trade.OrderUpdateV2;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -13,7 +14,9 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -202,9 +205,9 @@ public class SpotRandom implements Job {
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_DOWN);
                 if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
-
-                    String sb = "SpotRandom 最新收益: " + pureProfit;
-                    StrategyCommon.weChatPusher(API_CODE, sb, 2);
+                    String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+                    String sb = time + " : " + pureProfit;
+                    StrategyCommon.saveToFile(sb);
                     StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     log.error("====== SpotRandom.checkOrderStatus-{} : {} ======", CURRENT_STRATEGY, pureProfit);
                 }

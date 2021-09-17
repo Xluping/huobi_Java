@@ -12,9 +12,14 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class StrategyCommonTest {
@@ -92,5 +97,22 @@ public class StrategyCommonTest {
         //
         Point point = CurrentAPI.getApiInstance(API_CODE).getAccountClient().getPoint(PointRequest.builder().build());
         System.out.println(" -- StrategyCommonTest.getPoint -- " + point.toString());
+    }
+
+    @Test
+    public void saveToFile() {
+        String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
+        String sb = time + " : 0.5";
+
+        try {
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./logs/profit.txt", true)), 1024);
+            bw.write(sb);
+            bw.newLine();
+            bw.flush();
+            bw.close();
+        } catch (Exception e) {
+            logger.error("====== StrategyCommon.saveToFile 写入文件出错: {} ======", e.getMessage());
+        }
+
     }
 }
