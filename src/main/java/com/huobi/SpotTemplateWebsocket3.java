@@ -32,10 +32,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class SpotTemplateWebsocket3 implements Job {
     private static String BASE_CURRENCY = "";
-    private static final String QUOTE_CURRENCY = "usdt";
     private static String SYMBOL;
     private static String PORTION;
     // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改 CURRENT_STRATEGY
+    private static final String QUOTE_CURRENCY = "btc";
     private static final int CURRENT_STRATEGY = 3;
     // TODO: 9/17/21 测试用100 正式  API_CODE = 1/2/3
     private static final int API_CODE = 3;
@@ -64,10 +64,10 @@ public class SpotTemplateWebsocket3 implements Job {
         BASE_CURRENCY = args[0];
         PORTION = args[1];
         // TODO: 9/17/21 test
-//        BASE_CURRENCY = "cspr";
-//        PORTION = "500";
+//        BASE_CURRENCY = "box";
+//        PORTION = "0.2";
         if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
-            BASE_CURRENCY = "ht";
+            BASE_CURRENCY = "box";
             logger.error("====== main: BASE_CURRENCY == null || BASE_CURRENCY.isEmpty() set BASE_CURRENCY = {} ======", BASE_CURRENCY);
         }
         SYMBOL = BASE_CURRENCY + QUOTE_CURRENCY;
