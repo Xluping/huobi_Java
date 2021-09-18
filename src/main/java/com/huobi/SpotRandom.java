@@ -1,11 +1,7 @@
 package com.huobi;
 
-import com.huobi.client.req.trade.SubOrderUpdateV2Request;
 import com.huobi.constant.enums.CandlestickIntervalEnum;
 import com.huobi.model.trade.Order;
-import com.huobi.model.trade.OrderUpdateV2;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.StopWatch;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -201,7 +197,7 @@ public class SpotRandom implements Job {
         if (sellOrderMap.size() <= hold_size) {
             log.info("====== SpotRandom-checkOrderStatus-{} : sellOrderMap.size: {}, 可以重新启动 ======", CURRENT_STRATEGY, sellOrderMap.size());
             if (sellSize != 0 && sellOrderMap.size() == 0) {
-                log.info("====== SpotRandom-checkOrderStatus-{} : 卖单已全部成交 ======", CURRENT_STRATEGY);
+                log.info("====== SpotRandom-checkOrderStatus-{} : sellOrderMap.size:{} <= hold_size:{} ======", CURRENT_STRATEGY, sellOrderMap.size(), hold_size);
                 BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                 pureProfit = pureProfit.setScale(2, RoundingMode.HALF_DOWN);
                 if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
