@@ -104,7 +104,7 @@ public class SpotTemplateWebsocket3 implements Job {
             orderListener();
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
-            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
+//            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
             launch();
             priceListener();
@@ -257,6 +257,7 @@ public class SpotTemplateWebsocket3 implements Job {
                 latestPrice = marketTrade.getPrice();
                 //价格三倍,WeChat提示并退出
                 if (latestPrice.compareTo(spot.getStopPrice()) >= 0) {
+                    logger.info("====== SpotTemplateWebsocket3-priceListener-{}-{}  : 全部卖出了  ======", SYMBOL, CURRENT_STRATEGY);
                     StrategyCommon.weChatPusher(API_CODE, SYMBOL + " 全部卖出了", 2);
                     System.exit(0);
                 }
@@ -286,6 +287,7 @@ public class SpotTemplateWebsocket3 implements Job {
                         StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     }
                     orderCount.set(-1);
+                    launch();
                 }
 
 
@@ -349,7 +351,7 @@ public class SpotTemplateWebsocket3 implements Job {
                         } else {
                             insufficientFound = true;
                             ticker.getAndAdd(1);
-                            if (ticker.get() % 30 == 0) {
+                            if (ticker.get() % 50 == 0) {
                                 ticker.getAndSet(1);
                                 usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
                                 logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());

@@ -84,9 +84,9 @@ public class SpotTemplateRestful implements Job {
         try {
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
-            StrategyCommon.cancelOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.BUY);
+//            StrategyCommon.cancelOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
-            launch(CURRENT_STRATEGY);
+            launch();
         } catch (Exception exception) {
             logger.error("====== {}-{}-init-startup: {} ======", SYMBOL, CURRENT_STRATEGY, exception.getMessage());
         }
@@ -211,18 +211,18 @@ public class SpotTemplateRestful implements Job {
 
     }
 
-    public void launch(int currentStrategy) {
+    public void launch() {
         StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
-        logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, currentStrategy, spot);
+        logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, CURRENT_STRATEGY, spot);
         latestPrice = StrategyCommon.getCurrentTradPrice(CURRENT_STRATEGY, spot.getSymbol());
-        logger.info("====== {}-{}-launch price: {} ======", SYMBOL, currentStrategy, latestPrice);
-        StrategyCommon.calculateBuyPriceList(currentStrategy, latestPrice, spot.getPricePrecision());
+        logger.info("====== {}-{}-launch price: {} ======", SYMBOL, CURRENT_STRATEGY, latestPrice);
+        StrategyCommon.calculateBuyPriceList(CURRENT_STRATEGY, latestPrice, spot.getPricePrecision());
         usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, spot.getQuoteCurrency());
         // 启动后,根据当前价格下单 buy .
         if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
-            StrategyCommon.buy(currentStrategy, spot, latestPrice, spot.getPortionHigh(), 2);
+            StrategyCommon.buy(CURRENT_STRATEGY, spot, latestPrice, spot.getPortionHigh(), 2);
         } else {
-            logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, currentStrategy, usdtBalance.toString());
+            logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
         }
 //        ConcurrentHashMap<String, BigDecimal> sellOrderMap = StrategyCommon.getSellOrderMap();
 //        List<Order> sellOrders = StrategyCommon.getOpenOrders(spotAccountId, SYMBOL, OrderSideEnum.SELL);
@@ -254,7 +254,7 @@ public class SpotTemplateRestful implements Job {
                 System.exit(0);
             }
 
-            // 处理之前的买单,卖单
+            // 处理之前的买单
             ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
             ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
             Iterator<ConcurrentHashMap.Entry<String, Spot>> buyIterator = buyOrderMap.entrySet().iterator();
@@ -300,7 +300,7 @@ public class SpotTemplateRestful implements Job {
                 }
 
             }
-
+            // 处理之前的卖单
             while (sellIterator.hasNext() && requestLimitNum < 5) {
                 Map.Entry<String, Spot> entry = sellIterator.next();
                 String orderId = entry.getKey();
@@ -349,6 +349,8 @@ public class SpotTemplateRestful implements Job {
                     StrategyCommon.weChatPusher(CURRENT_STRATEGY, sb, 2);
                 }
                 orderCount.set(-1);
+                launch();
+
             }
             if (balanceChanged) { //订单成交后,更新余额
                 usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(CURRENT_STRATEGY, spotAccountId, spot.getQuoteCurrency());
