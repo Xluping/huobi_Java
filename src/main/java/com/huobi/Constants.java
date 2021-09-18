@@ -12,10 +12,9 @@ public class Constants {
 //    public static final String SECRET_KEY = "";
 
     // wechat pusher
-    public static final String WX_PUSHER_TOKEN = "";
+
+    public static final String WX_PUSHER_TOKEN = "AT_RQ1xF00Lq69TkYNn0dC8DC8U6wM0vvaP";
     public static final String WX_PUSHER_URL = "http://wxpusher.zjiecode.com/api/send/message";
-
-
 
     /////////////////////////高频//////////////////////////////////
     public static final Double HIGH_RATIO_1 = 0.6;
@@ -57,19 +56,19 @@ public class Constants {
     ///////////////////////////////////////////////////////////
 
 
-    /////////////////////////保守//////////////////////////////////
-    public static final Double HIGH_RATIO_3 = 0.2;
+    /////////////////////////保守 for "*/BTC" //////////////////////////////////
+    public static final Double HIGH_RATIO_3 = 0.6;
     public static final Double MEDIUM_RATIO_3 = 0.2;
-    public static final Double LOW_RATIO_3 = 0.6;
+    public static final Double LOW_RATIO_3 = 0.2;
     //策略区间 30%以内
     public static final double HIGH_RANGE_3 = 10;   // 0-10%
-    public static final double MEDIUM_RANGE_3 = 15; // 10-15%
-    public static final double LOW_RANGE_3 = 35;   // 15-35%   <100
+    public static final double MEDIUM_RANGE_3 = 20; // 10-20%
+    public static final double LOW_RANGE_3 = 30;   // 20-30%   <100
 
     // 策略区间内下单次数
     public static final double HIGH_COUNT_3 = 10;  //1%下一次单
-    public static final double MEDIUM_COUNT_3 = 10; //0.5% 下一次单
-    public static final double LOW_COUNT_3 = 20;   //1% 下一次单
+    public static final double MEDIUM_COUNT_3 = 10; //1% 下一次单
+    public static final double LOW_COUNT_3 = 5;   //2% 下一次单
 
     //offset 止盈点,  涨 2% 就卖掉.
     public static final BigDecimal SELL_OFFSET_3 = new BigDecimal("1.1");
