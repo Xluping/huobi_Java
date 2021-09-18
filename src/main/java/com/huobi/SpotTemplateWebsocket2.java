@@ -103,7 +103,7 @@ public class SpotTemplateWebsocket2 implements Job {
             orderListener();
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
-            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
+//            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
             launch();
             priceListener();
@@ -284,6 +284,7 @@ public class SpotTemplateWebsocket2 implements Job {
                         StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     }
                     orderCount.set(-1);
+                    launch();
                 }
 
 
@@ -347,7 +348,7 @@ public class SpotTemplateWebsocket2 implements Job {
                         } else {
                             insufficientFound = true;
                             ticker.getAndAdd(1);
-                            if (ticker.get() % 30 == 0) {
+                            if (ticker.get() % 50 == 0) {
                                 ticker.getAndSet(1);
                                 usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
                                 logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());

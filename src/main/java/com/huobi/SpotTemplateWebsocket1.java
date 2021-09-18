@@ -103,7 +103,7 @@ public class SpotTemplateWebsocket1 implements Job {
             orderListener();
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
-            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
+//            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
             StrategyCommon.getBuyOrderMap().clear();
             launch();
             priceListener();
@@ -260,6 +260,7 @@ public class SpotTemplateWebsocket1 implements Job {
                 ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
                 ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
                 //本轮买单已全部卖出. 重启应用
+                // TODO xlp 9/19/21 12:26 AM  : 多个策略会互相影响
                 // 启动时,余额不足 不执行此逻辑, insufficientFound=true
                 if (sellOrderMap.size() == 0 && !insufficientFound) {
                     logger.info("====== {}-{}-priceListener-开始清理残余买单. insufficientFound: {} ======", SYMBOL, CURRENT_STRATEGY, insufficientFound);
@@ -283,6 +284,8 @@ public class SpotTemplateWebsocket1 implements Job {
                         StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     }
                     orderCount.set(-1);
+                    launch();
+
                 }
 
 
@@ -346,7 +349,7 @@ public class SpotTemplateWebsocket1 implements Job {
                         } else {
                             insufficientFound = true;
                             ticker.getAndAdd(1);
-                            if (ticker.get() % 30 == 0) {
+                            if (ticker.get() % 50 == 0) {
                                 ticker.getAndSet(1);
                                 usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
                                 logger.info("====== {}-{}-priceListener: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());

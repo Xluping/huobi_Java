@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
@@ -391,6 +390,7 @@ public class StrategyCommon {
 
 
     /**
+     * todo 同一币种,多个策略同时启动的时候会互相影响
      * 重启后,取消当前交易对的所有orderSide方向的订单
      */
     public static void cancelOpenOrders(int strategy, Long accountId, String symbol, OrderSideEnum orderSide) {
