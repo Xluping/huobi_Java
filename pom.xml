@@ -131,7 +131,7 @@
                         <id>m0</id>
                         <configuration>
                             <finalName>spot0</finalName>
-                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.SpotRandom</mainClass>
@@ -150,7 +150,7 @@
                         <id>m1</id>
                         <configuration>
                             <finalName>spot1</finalName>
-                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.SpotTemplateWebsocket1</mainClass>
@@ -169,7 +169,7 @@
                         <id>m2</id>
                         <configuration>
                             <finalName>spot2</finalName>
-                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.SpotTemplateWebsocket2</mainClass>
@@ -188,7 +188,7 @@
                         <id>m3</id>
                         <configuration>
                             <finalName>spot3</finalName>
-                            <outputDirectory>/Users/xlp/Desktop/jars</outputDirectory>
+                            <outputDirectory>/Users/luping/Desktop/jars</outputDirectory>
                             <archive>
                                 <manifest>
                                     <mainClass>com.huobi.SpotTemplateWebsocket3</mainClass>

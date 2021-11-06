@@ -406,6 +406,7 @@ public class SpotTemplateWebsocket2 implements Job {
                         } else {
                             sellOrderMap.remove(String.valueOf(orderId));
                         }
+                        StrategyCommon.cancelOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.BUY);
 
                     }
                 } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(order.getOrderStatus())) {
@@ -508,6 +509,8 @@ public class SpotTemplateWebsocket2 implements Job {
                         logger.error("====== SpotTemplateWebsocket.checkOrderStatus-{}-{}-卖单已成交 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
                         orderCount.decrementAndGet();
                         sellIterator.remove();
+                        StrategyCommon.cancelOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.BUY);
+
                     } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
                         logger.error("====== SpotTemplateWebsocket.checkOrderStatus-{}-{}-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
                         orderCount.incrementAndGet();
