@@ -38,7 +38,7 @@
  java -jar -Dserver.port=8081 ont.jar &
   
 <li>9. 启动时,市场价下单
-<li>10. <br>
+<li>10. 服务器目录结构<br>
 root/<br>
     -- cp.sh<br>
     -- huobi-command-util.jar<br>
