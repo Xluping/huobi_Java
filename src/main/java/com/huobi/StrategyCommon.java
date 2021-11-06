@@ -100,7 +100,7 @@ public class StrategyCommon {
             BigDecimal downTo = goDown.add(pre);
             BigDecimal buyPosition = base.subtract(downTo);
             BigDecimal buyPrice = latestPrice.multiply(buyPosition).setScale(scale, RoundingMode.DOWN);
-            log.info("====== {}-StrategyCommon-buyPosition: 下跌 {}% 到 {}% = {} ======", strategy, downTo.multiply(new BigDecimal("100")).toString(), buyPosition.multiply(new BigDecimal("100")).toString(), buyPrice.toString());
+            log.error("====== {}-StrategyCommon-buyPosition: 下跌 {}% 到 {}% = {} ======", strategy, downTo.multiply(new BigDecimal("100")).toString(), buyPosition.multiply(new BigDecimal("100")).toString(), buyPrice.toString());
             priceList.add(buyPrice);
         }
         log.info("==============================================================");
