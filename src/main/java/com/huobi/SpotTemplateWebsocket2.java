@@ -20,6 +20,7 @@ import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -55,8 +56,8 @@ public class SpotTemplateWebsocket2 implements Job {
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
     //启动后,下了市价买单后,设置为true
-//    private static volatile AtomicBoolean listened = new AtomicBoolean(false);
     private static final Logger logger = LoggerFactory.getLogger(SpotTemplateWebsocket2.class);
+    private static AtomicBoolean starting = new AtomicBoolean(true);
 
     public static void main(String[] args) {
 
@@ -92,7 +93,6 @@ public class SpotTemplateWebsocket2 implements Job {
         jobManagement.startJob();
 
     }
-
 
     /**
      * 设置基本参数
@@ -219,26 +219,31 @@ public class SpotTemplateWebsocket2 implements Job {
     }
 
     public void launch() {
-
-        latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
-        spot.setStartPrice(latestPrice);
-        if (spot.getDoublePrice() == null) {
-            spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
-        }
-        if (spot.getTriplePrice() == null) {
-            spot.setTriplePrice(latestPrice.multiply(new BigDecimal("3")));
-        }
-        logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, CURRENT_STRATEGY, spot);
-        logger.info("====== {}-{}-launch price: {} ======", SYMBOL, CURRENT_STRATEGY, latestPrice);
-        StrategyCommon.calculateBuyPriceList(API_CODE, latestPrice, spot.getPricePrecision());
-        usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
-        List<Order> sellOrders = StrategyCommon.getOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.SELL);
-        logger.info("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, CURRENT_STRATEGY, sellOrders.size());
-        // 启动后,根据当前价格下单 buy .
-        if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
-            StrategyCommon.buy(API_CODE, spot, latestPrice, spot.getPortionHigh(), 2);
+        if (starting.get()) {
+            latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
+            spot.setStartPrice(latestPrice);
+            if (spot.getDoublePrice() == null) {
+                spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
+            }
+            if (spot.getTriplePrice() == null) {
+                spot.setTriplePrice(latestPrice.multiply(new BigDecimal("3")));
+            }
+            logger.error("====== {}-{}-SpotTemplate-launch:策略启动: {} ======", SYMBOL, CURRENT_STRATEGY, spot);
+            logger.info("====== {}-{}-launch price: {} ======", SYMBOL, CURRENT_STRATEGY, latestPrice);
+            StrategyCommon.calculateBuyPriceList(API_CODE, latestPrice, spot.getPricePrecision());
+            usdtBalance = StrategyCommon.getQuotaBalanceByAccountId(API_CODE, spotAccountId, spot.getQuoteCurrency());
+            // 启动之前所有的卖单 暂不处理.
+            List<Order> sellOrders = StrategyCommon.getOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.SELL);
+            logger.info("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, CURRENT_STRATEGY, sellOrders.size());
+            // 启动后,根据当前价格下单 buy .
+            if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
+                StrategyCommon.buy(API_CODE, spot, latestPrice, spot.getPortionHigh(), 2);
+            } else {
+                logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
+            }
+            starting.getAndSet(false);
         } else {
-            logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
+            logger.error("====== SpotTemplateWebsocket1.launch   正在启动中... ======");
         }
     }
 
@@ -260,8 +265,10 @@ public class SpotTemplateWebsocket2 implements Job {
                 ConcurrentHashMap<String, Spot> buyOrderMap = StrategyCommon.getBuyOrderMap();
                 ConcurrentHashMap<String, Spot> sellOrderMap = StrategyCommon.getSellOrderMap();
                 //本轮买单已全部卖出. 重启应用
+                // TODO xlp 9/19/21 12:26 AM  : 多个策略会互相影响
                 // 启动时,余额不足 不执行此逻辑, insufficientFound=true
                 if (sellOrderMap.size() == 0 && !insufficientFound) {
+                    boolean canRelaunch = true;
                     logger.info("====== {}-{}-priceListener-开始清理残余买单. insufficientFound: {} ======", SYMBOL, CURRENT_STRATEGY, insufficientFound);
                     Iterator<Map.Entry<String, Spot>> iterator = StrategyCommon.getBuyOrderMap().entrySet().iterator();
 
@@ -270,21 +277,27 @@ public class SpotTemplateWebsocket2 implements Job {
                         String clientId = entry.getKey();
                         Order remainOrder = StrategyCommon.getOrderByClientId(API_CODE, clientId);
                         assert remainOrder != null;
-                        logger.info("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
-                        StrategyCommon.cancelOrder(API_CODE, clientId);
-                        iterator.remove();
+                        if (!"buy-market".equalsIgnoreCase(remainOrder.getType())) {
+                            logger.info("====== {}-{}-priceListener-正在取消订单: {} ======", SYMBOL, CURRENT_STRATEGY, remainOrder.toString());
+                            StrategyCommon.cancelOrder(API_CODE, clientId);
+                            iterator.remove();
+                        } else {
+                            canRelaunch = false;
+                        }
                     }
                     BigDecimal pureProfit = StrategyCommon.getProfit().subtract(StrategyCommon.getFee());
                     pureProfit = pureProfit.setScale(2, RoundingMode.HALF_UP);
                     if (pureProfit.compareTo(BigDecimal.ZERO) > 0) {
-
                         String time = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
                         String sb = time + " : " + pureProfit + " " + SYMBOL;
                         StrategyCommon.saveToFile(sb);
                         StrategyCommon.resetFeeAndProfit(CURRENT_STRATEGY);
                     }
                     orderCount.set(-1);
-                    launch();
+                    if (canRelaunch) {
+                        launch();
+                    }
+
                 }
 
 
@@ -510,7 +523,6 @@ public class SpotTemplateWebsocket2 implements Job {
                         orderCount.decrementAndGet();
                         sellIterator.remove();
                         StrategyCommon.cancelOpenOrders(CURRENT_STRATEGY, spotAccountId, SYMBOL, OrderSideEnum.BUY);
-
                     } else if (OrderStatusEnum.CANCELED.getName().equalsIgnoreCase(sellOrder.getState().trim())) {
                         logger.error("====== SpotTemplateWebsocket.checkOrderStatus-{}-{}-卖单已取消 : {} ======", SYMBOL, CURRENT_STRATEGY, sellOrder.toString());
                         orderCount.incrementAndGet();
