@@ -170,9 +170,11 @@ public class StrategyCommon {
     @Synchronized
     public static void sell(int strategy, Spot spot, BigDecimal buyPrice, BigDecimal coinAmount, int type) {
         log.info("====== {}-{}-StrategyCommon:  SELL-参数:  buyPrice:{} ,coinAmount:{}, type:{} ======", spot.getSymbol(), strategy, buyPrice, coinAmount, type);
+        //最小下单量限制
+        BigDecimal orderAmount = null;
+        BigDecimal sellPrice = null;
         // 计算卖出价格 buyPrice * (1+offset);
         try {
-            BigDecimal sellPrice = null;
             switch (strategy) {
                 case 1:
                     sellPrice = buyPrice.multiply(Constants.SELL_OFFSET_1);
@@ -195,8 +197,7 @@ public class StrategyCommon {
             assert sellPrice != null;
             sellPrice = sellPrice.setScale(spot.getPricePrecision(), RoundingMode.HALF_UP);
             coinAmount = coinAmount.setScale(spot.getAmountPrecision(), RoundingMode.DOWN);
-            //最小下单量限制
-            BigDecimal orderAmount;
+
             //最小下单量限制
             if (coinAmount.compareTo(spot.getLimitOrderMinOrderAmt()) < 0) {
                 log.info("====== {}-{}-StrategyCommon: 按最小下单币数下单 SELL {} ======", spot.getSymbol(), strategy, spot.getLimitOrderMinOrderAmt());
@@ -217,6 +218,11 @@ public class StrategyCommon {
             CurrentAPI.getApiInstance(strategy).getTradeClient().createOrder(sellRequest);
             sellOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
+            if (sellPrice.multiply(orderAmount).compareTo(spot.getMinOrderValue()) < 0) {
+                log.error("====== {}-StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 101%的币 ======", spot.getSymbol(), e.getMessage());
+                sell(strategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("1.01")), type);
+                return;
+            }
             log.error("====== {}-StrategyCommon.sell : 卖出时发生异常 {}, 重新尝试下单 99%的币 ======", spot.getSymbol(), e.getMessage());
             sell(strategy, spot, buyPrice, coinAmount.multiply(new BigDecimal("0.99")), type);
         }
