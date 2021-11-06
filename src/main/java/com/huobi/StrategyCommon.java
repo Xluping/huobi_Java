@@ -141,6 +141,7 @@ public class StrategyCommon {
             spot.setOrderAmount(coinAmount);
             CreateOrderRequest buyRequest;
             String clientOrderId = spot.getSymbol() + System.nanoTime();
+            buyOrderMap.putIfAbsent(clientOrderId, spot);
 
             if (type == 1) {
                 // buy
@@ -152,7 +153,6 @@ public class StrategyCommon {
             }
 
             CurrentAPI.getApiInstance(strategy).getTradeClient().createOrder(buyRequest);
-            buyOrderMap.putIfAbsent(clientOrderId, spot);
         } catch (Exception e) {
             log.error("====== {}-StrategyCommon.buy : 买入异常,按90%买入, {} ======", spot.getSymbol(), e.getMessage());
             // 因为价格在波动,其他买单可能按照市场价下单时,可能占用更多的usdt,导致当前订单余额不足
@@ -207,7 +207,7 @@ public class StrategyCommon {
 
             spot.setOrderAmount(orderAmount);
 
-            log.info("====== {}-{}-StrategyCommon:  SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), strategy, sellPrice.toString(), clientOrderId, orderAmount, type);
+            log.info("====== {}-{}-StrategyCommon:  限价 SELL at: {},  clientOrderId: {}, orderAmount: {}, type: {} ======", spot.getSymbol(), strategy, sellPrice.toString(), clientOrderId, orderAmount, type);
             CreateOrderRequest sellRequest;
             if (type == 1) {
                 sellRequest = CreateOrderRequest.spotSellLimit(spot.getAccountId(), clientOrderId, spot.getSymbol(), sellPrice, orderAmount);
