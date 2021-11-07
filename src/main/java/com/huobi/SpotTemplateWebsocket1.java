@@ -103,7 +103,6 @@ public class SpotTemplateWebsocket1 implements Job {
             totalBalance = new BigDecimal(PORTION);
             prepareSpot(totalBalance, CURRENT_STRATEGY);
 //            StrategyCommon.cancelOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.BUY);
-            StrategyCommon.getBuyOrderMap().clear();
             launch();
             priceListener();
         } catch (Exception exception) {
@@ -218,6 +217,8 @@ public class SpotTemplateWebsocket1 implements Job {
     }
 
     public void launch() {
+        StrategyCommon.getBuyOrderMap().clear();
+
         latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
         spot.setStartPrice(latestPrice);
         if (spot.getDoublePrice() == null) {
@@ -291,6 +292,7 @@ public class SpotTemplateWebsocket1 implements Job {
                     orderCount.set(-1);
                     if (canRelaunch) {
                         launch();
+                        return;
                     }
 
                 }
