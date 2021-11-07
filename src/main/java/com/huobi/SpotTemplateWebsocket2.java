@@ -291,6 +291,7 @@ public class SpotTemplateWebsocket2 implements Job {
                     orderCount.set(-1);
                     if (canRelaunch) {
                         launch();
+                        return;
                     }
 
                 }
