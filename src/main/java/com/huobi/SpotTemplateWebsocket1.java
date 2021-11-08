@@ -215,10 +215,8 @@ public class SpotTemplateWebsocket1 implements Job {
         logger.info("{}-prepareSpot-L 每次补仓份额: {}-{}", SYMBOL, portionLow, spot.getQuoteCurrency());
         logger.info("{}-prepareSpot-L 补仓次数: {}", SYMBOL, lowCount);
     }
-
+    @Synchronized
     public void launch() {
-        StrategyCommon.getBuyOrderMap().clear();
-
         latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
         spot.setStartPrice(latestPrice);
         if (spot.getDoublePrice() == null) {
@@ -235,7 +233,8 @@ public class SpotTemplateWebsocket1 implements Job {
         List<Order> sellOrders = StrategyCommon.getOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.SELL);
         logger.info("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, CURRENT_STRATEGY, sellOrders.size());
         // 启动后,根据当前价格下单 buy .
-        if (usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
+        if (StrategyCommon.getBuyOrderMap().size() == 0
+                && usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buy(API_CODE, spot, latestPrice, spot.getPortionHigh(), 2);
         } else {
             logger.info("====== {}-{}-launch: 所剩 usdt 余额不足,等待卖单成交 {} ======", SYMBOL, CURRENT_STRATEGY, usdtBalance.toString());
