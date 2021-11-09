@@ -235,8 +235,11 @@ public class SpotTemplateWebsocket3 implements Job {
         // 启动之前所有的卖单 暂不处理.
         List<Order> sellOrders = StrategyCommon.getOpenOrders(API_CODE, spotAccountId, SYMBOL, OrderSideEnum.SELL);
         logger.info("====== {}-{}-launch: 现在 all 卖单 {} 个  ======", SYMBOL, CURRENT_STRATEGY, sellOrders.size());
+        logger.info("====== SpotTemplateWebsocket1.launch : getBuyOrderMap {} ======", StrategyCommon.getBuyOrderMap().size());
+        logger.info("====== SpotTemplateWebsocket1.launch : getSellOrderMap {} ======", StrategyCommon.getSellOrderMap().size());
         // 启动后,根据当前价格下单 buy .
         if (StrategyCommon.getBuyOrderMap().size() == 0
+                && StrategyCommon.getSellOrderMap().size() == 0
                 && usdtBalance.compareTo(spot.getPortionHigh()) >= 0) {
             StrategyCommon.buy(API_CODE, spot, latestPrice, spot.getPortionHigh(), 2);
         } else {
