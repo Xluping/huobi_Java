@@ -39,7 +39,7 @@ public class SpotTemplateWebsocket1 implements Job {
     // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改 CURRENT_STRATEGY
     private static final int CURRENT_STRATEGY = 1;
     // TODO: 9/17/21 测试用100 正式  API_CODE = 1/2/3
-    private static final int API_CODE = 100;
+    private static final int API_CODE = 1;
 
     private static Long spotAccountId = 14086863L;
     private static Long pointAccountId = 14424186L;
@@ -63,11 +63,11 @@ public class SpotTemplateWebsocket1 implements Job {
     public static void main(String[] args) {
 
         // TODO: 9/17/21 product
-//        BASE_CURRENCY = args[0];
-//        PORTION = args[1];
+        BASE_CURRENCY = args[0];
+        PORTION = args[1];
         // TODO: 9/17/21 test
-        BASE_CURRENCY = "cspr";
-        PORTION = "500";
+//        BASE_CURRENCY = "cspr";
+//        PORTION = "500";
         if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
             BASE_CURRENCY = "ht";
             logger.error("====== main: BASE_CURRENCY == null || BASE_CURRENCY.isEmpty() set BASE_CURRENCY = {} ======", BASE_CURRENCY);
