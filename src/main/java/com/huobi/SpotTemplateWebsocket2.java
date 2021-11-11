@@ -53,6 +53,7 @@ public class SpotTemplateWebsocket2 implements Job {
     private static final AtomicInteger orderCount = new AtomicInteger(-1);
     private static volatile BigDecimal usdtBalance = BigDecimal.ZERO;
     private static volatile BigDecimal latestPrice;
+    private static volatile BigDecimal prePrice;
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
     //启动后,下了市价买单后,设置为true
@@ -220,6 +221,7 @@ public class SpotTemplateWebsocket2 implements Job {
     @Synchronized
     public void launch() {
         latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
+        prePrice = latestPrice;
         spot.setStartPrice(latestPrice);
         if (spot.getDoublePrice() == null) {
             spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
@@ -257,6 +259,10 @@ public class SpotTemplateWebsocket2 implements Job {
                 StopWatch clock = new StopWatch();
                 clock.start(); // 计时开始
                 latestPrice = marketTrade.getPrice();
+                if (prePrice.compareTo(latestPrice) == 0) {
+                    return;
+                }
+                prePrice = latestPrice;
                 //价格三倍,WeChat提示并退出
                 if (latestPrice.compareTo(spot.getDoublePrice()) >= 0) {
                     StrategyCommon.weChatPusher(API_CODE, "价格翻倍,退出", 2);

@@ -39,7 +39,7 @@ public class SpotTemplateWebsocket1 implements Job {
     // TODO xlp 9/13/21 2:20 AM  :  复制之后, 修改 CURRENT_STRATEGY
     private static final int CURRENT_STRATEGY = 1;
     // TODO: 9/17/21 测试用100 正式  API_CODE = 1/2/3
-    private static final int API_CODE = 1;
+    private static final int API_CODE = 100;
 
     private static Long spotAccountId = 14086863L;
     private static Long pointAccountId = 14424186L;
@@ -51,7 +51,9 @@ public class SpotTemplateWebsocket1 implements Job {
     private static BigDecimal totalBalance;
 
     private static final AtomicInteger orderCount = new AtomicInteger(-1);
+
     private static volatile BigDecimal usdtBalance = BigDecimal.ZERO;
+    private static volatile BigDecimal prePrice;
     private static volatile BigDecimal latestPrice;
     private static volatile boolean insufficientFound = true;
     private static volatile boolean balanceChanged = false;
@@ -61,11 +63,11 @@ public class SpotTemplateWebsocket1 implements Job {
     public static void main(String[] args) {
 
         // TODO: 9/17/21 product
-        BASE_CURRENCY = args[0];
-        PORTION = args[1];
+//        BASE_CURRENCY = args[0];
+//        PORTION = args[1];
         // TODO: 9/17/21 test
-//        BASE_CURRENCY = "cspr";
-//        PORTION = "500";
+        BASE_CURRENCY = "cspr";
+        PORTION = "500";
         if (BASE_CURRENCY == null || BASE_CURRENCY.isEmpty()) {
             BASE_CURRENCY = "ht";
             logger.error("====== main: BASE_CURRENCY == null || BASE_CURRENCY.isEmpty() set BASE_CURRENCY = {} ======", BASE_CURRENCY);
@@ -215,9 +217,11 @@ public class SpotTemplateWebsocket1 implements Job {
         logger.info("{}-prepareSpot-L 每次补仓份额: {}-{}", SYMBOL, portionLow, spot.getQuoteCurrency());
         logger.info("{}-prepareSpot-L 补仓次数: {}", SYMBOL, lowCount);
     }
+
     @Synchronized
     public void launch() {
         latestPrice = StrategyCommon.getCurrentTradPrice(API_CODE, spot.getSymbol());
+        prePrice = latestPrice;
         spot.setStartPrice(latestPrice);
         if (spot.getDoublePrice() == null) {
             spot.setDoublePrice(latestPrice.multiply(new BigDecimal("2")));
@@ -255,6 +259,10 @@ public class SpotTemplateWebsocket1 implements Job {
                 StopWatch clock = new StopWatch();
                 clock.start(); // 计时开始
                 latestPrice = marketTrade.getPrice();
+                if (prePrice.compareTo(latestPrice) == 0) {
+                    return;
+                }
+                prePrice = latestPrice;
                 //价格三倍,WeChat提示并退出
                 if (latestPrice.compareTo(spot.getDoublePrice()) >= 0) {
                     StrategyCommon.weChatPusher(API_CODE, "价格翻倍,退出", 2);
